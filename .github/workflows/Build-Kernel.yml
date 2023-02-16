@@ -125,7 +125,7 @@ jobs:
 
     - name: "👍 Upload Artifact"
       uses: actions/upload-artifact@v3
-      if: env.CANCEL != "'true' && github.event.inputs.release == 'Artifact'
+      if: env.CANCEL != 'true' && github.event.inputs.release == 'Artifact'
       with:
         name: ${{ env.VERSION }}
         path: |
