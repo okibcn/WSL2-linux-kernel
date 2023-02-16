@@ -128,7 +128,8 @@ jobs:
       if: env.CANCEL != "'true' && github.event.inputs.release == 'Artifact'
       with:
         name: ${{ env.VERSION }}
-        path: *.7z
+        path: |
+          *.7z
 
 
     - name: "🎉 Publish a new release"
@@ -141,5 +142,6 @@ jobs:
       with:
         tag_name: ${{ env.VERSION }}
         body_path: body.txt
-        files: *.7z
+        files: |
+          *.7z
 
