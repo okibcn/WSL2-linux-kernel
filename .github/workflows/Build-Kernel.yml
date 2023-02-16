@@ -112,15 +112,15 @@ jobs:
     - name: "📦 Create Package"
       if:  env.CANCEL != 'true'
       run: |
-        cd kernel
         ############################
         ##                          ##
         ##      CREATE PACKAGE      ##
         ##                          ##
         ############################
+        cd kernel
         KERNEL_VERSION=$(make kernelversion)
-        echo "KERNEL_VERSION=$KERNEL_VERSION" >>  $GITHUB_ENV
-        cp ../install.ps1
+        echo "KERNEL_VERSION=$KERNEL_VERSION" >> $GITHUB_ENV
+        cp ../install.ps1 .
         cp arch/x86/boot/bzImage WSLk_${KERNEL_VERSION}
         7z a -aoa -- "../WSLkernel_${KERNEL_VERSION}.7z" install.ps1 WSLk*
 
@@ -142,7 +142,7 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         tag_name: ${{ env.KERNEL_VERSION }}
-        body_path: $body
+        body_path: /home/runner/body.txt
         files: |
           *.7z
 
