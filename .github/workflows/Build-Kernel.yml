@@ -1,0 +1,144 @@
+name: Build Kernel
+
+on:
+  # schedule:
+  #   - cron: '52 0 * * *'
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Debug session enabled'
+        required: false
+        default: false
+        type: boolean
+      release:
+        description: 'Delivery Channel'
+        required: false
+        default: 'Artifact'
+        type: choice
+        options:
+          - "Artifact"
+          - "Release"    
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - name: "⏬ Checkout repository"
+      uses: actions/checkout@v3
+
+
+    - name: "🔧 Prepare debug session"
+      if: github.event.inputs.debug_enabled == 'true'
+      run: |
+        ## install zsh
+        sudo apt install zsh zsh-syntax-highlighting
+
+        ## oh-my-posh
+        sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+        sudo chmod +x /usr/local/bin/oh-my-posh
+
+        ## setting rc files
+        echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.bashrc
+        echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.zshrc
+
+        ## Default profiles
+        cp .nanorc.linux ~/.nanorc
+        cp /etc/bash.bashrc ~
+        cat Github_Linux/profile.sh >> ~/bash.bashrc
+        sudo cp ~/bash.bashrc /etc/bash.bashrc -f
+        cp Github_Linux/profile.sh ~/.zshrc
+
+
+    - name: "🐞 Debug session"
+      uses: mxschmitt/action-tmate@v3
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: github.event.inputs.debug_enabled == 'true'
+        ## More info at https://til.simonwillison.net/github-actions/debug-tmate
+        ##           or https://github.com/mxschmitt/action-tmate
+
+
+    - name: "✔️ Pre-build checks"
+      run: |
+        WSL_DATE="$(wget -q https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/commits -O -\
+        | grep '"date"' \
+        | head -1 \
+        | awk -F '"' '{print $(NF-1)}')"
+        LAST_DATE=$( wget -q https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest -O - \
+        | awk -F \" -v RS="," '/published_at/ {print $(NF-1)}' ) \
+            || LAST_DATE="2000.01.01T00:00:00Z"
+        if [[ $WSL_DATE > $LAST_DATE ]]; then
+            echo "NEW KERNEL SOURCE!!!!"
+            echo "# KERNEL CHANGES" > body.txt
+            echo >> body.txt
+            cat body.txt
+        fi
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "NEW IMPROVEMENT!!!!"
+            [ -f body.txt ] && echo >> body.txt
+            echo "# IMPROVEMENTS" >> body.txt
+            echo >> body.txt
+        fi
+        if [ -f body.txt ]; then
+            echo "CANCEL=false" >>  $GITHUB_ENV
+        else
+            echo "NOTHING NEW. CANCELLING ACTION..."
+            echo "CANCEL=true" >>  $GITHUB_ENV
+        fi
+
+
+    - name: "⏬ Install Toolchain OS Tools"
+      if:  env.CANCEL != 'true'
+      run: sudo apt -y install build-essential flex bison dwarves libssl-dev libelf-dev
+
+
+    - name: "⏬ Fetch latest WSL kernel source"
+      if:  env.CANCEL != 'true'
+      run: git clone --depth 1 https://github.com/microsoft/WSL2-Linux-Kernel .
+
+
+    - name: "⚙️ Build WSL Kernel for Windows 64 bits"
+      if:  env.CANCEL != 'true'
+      run: yes ' ' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl
+
+    - name: "📦 Create Package"
+      if:  env.CANCEL != 'true'
+      run: |
+        cd nano
+        ############################
+        ##                          ##
+        ##      CREATE PACKAGE      ##
+        ##                          ##
+        ############################
+        WSLk_VERSION=$(makefile kernelversion)
+        echo "VERSION=$WSLk_VERSION" >>  $GITHUB_ENV
+        7z a -aoa --  \
+          "WSLkernel_${WSLk_VERSION}.7z"  \
+          pkg_{i686,x86_64}-w64-mingw32/{bin/nano.exe,share/{nano,doc}/}  \
+          .nanorc LICENSE README.md || exit 1
+        mv *.7z ..
+        cd ..
+
+    - name: "👍 Upload Artifact"
+      uses: actions/upload-artifact@v3
+      if: env.CANCEL != "'true' && github.event.inputs.release == 'Artifact'
+      with:
+        name: ${{ env.VERSION }}
+        path: *.7z
+
+
+    - name: "🎉 Publish a new release"
+      uses: softprops/action-gh-release@v0.1.15
+      # WARNING: before useing this action go to https://github.com/OWNER/REPO/settings/actions
+      # and in **Workflow Permissions** section give actions **Read and Write permissions**.
+      if: env.CANCEL != 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.release == 'Release')
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.VERSION }}
+        body_path: body.txt
+        files: *.7z

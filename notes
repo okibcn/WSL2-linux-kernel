@@ -1,0 +1,25 @@
+WSL_DATE=wget -q https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/commits \
+| grep '"date"' \
+| head -1 \
+| awk -F '"' '{print $(NF-1)}'
+LAST_DATE=$( wget -q https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest -O - \
+| awk -F \" -v RS="," '/published_at/ {print $(NF-1)}' ) \
+    || LAST_DATE="2000.01.01T00:00:00Z"
+if [[ "$WSL_DATE" > "$LAST_DATE" ]]; then
+    echo "NEW KERNEL SOURCE!!!!"
+    echo "# KERNEL CHANGES" > body.txt
+    echo >> body.txt
+    cat body.txt
+if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+    echo "NEW IMPROVEMENT!!!!"
+    [ -f body.txt ] && echo >> body.txt
+    echo "# IMPROVEMENTS" >> body.txt
+    echo >> body.txt
+fi
+if [ -f body.txt ]; then
+    echo "CANCEL=false" >>  $GITHUB_ENV
+else
+    echo "NOTHING NEW. CANCELLING ACTION..."
+    echo "CANCEL=true" >>  $GITHUB_ENV
+fi
+
