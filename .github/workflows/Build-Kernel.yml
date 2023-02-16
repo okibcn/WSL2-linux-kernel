@@ -107,7 +107,7 @@ jobs:
       if:  env.CANCEL != 'true'
       run: |
         cd kernel
-        yes '' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl
+        yes '' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl || exit 0
 
     - name: "📦 Create Package"
       if:  env.CANCEL != 'true'
@@ -128,7 +128,7 @@ jobs:
       uses: actions/upload-artifact@v3
       if: env.CANCEL != 'true' && github.event.inputs.release == 'Artifact'
       with:
-        name: ${{ env.VERSION }}
+        name: ${{ env.KERNEL_VERSION }}
         path: |
           *.7z
 
@@ -141,7 +141,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ env.VERSION }}
+        tag_name: ${{ env.KERNEL_VERSION }}
         body_path: $body
         files: |
           *.7z
