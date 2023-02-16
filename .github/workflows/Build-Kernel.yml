@@ -98,12 +98,12 @@ jobs:
 
     - name: "⏬ Fetch latest WSL kernel source"
       if:  env.CANCEL != 'true'
-      run: git clone --depth 1 https://github.com/microsoft/WSL2-Linux-Kernel .
+      run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel .
 
 
     - name: "⚙️ Build WSL Kernel for Windows 64 bits"
       if:  env.CANCEL != 'true'
-      run: yes ' ' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl
+      run: yes '' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl
 
     - name: "📦 Create Package"
       if:  env.CANCEL != 'true'
@@ -114,10 +114,10 @@ jobs:
         ##      CREATE PACKAGE      ##
         ##                          ##
         ############################
-        WSLk_VERSION=$(makefile kernelversion)
-        echo "VERSION=$WSLk_VERSION" >>  $GITHUB_ENV
+        KERNEL__VERSION=$(make kernelversion)
+        echo "KERNEL_VERSION=$KERNEL_VERSION" >>  $GITHUB_ENV
         7z a -aoa --  \
-          "WSLkernel_${WSLk_VERSION}.7z"  \
+          "WSLkernel_${KERNEL_VERSION}.7z"  \
           pkg_{i686,x86_64}-w64-mingw32/{bin/nano.exe,share/{nano,doc}/}  \
           .nanorc LICENSE README.md || exit 1
         mv *.7z ..
@@ -142,3 +142,4 @@ jobs:
         tag_name: ${{ env.VERSION }}
         body_path: body.txt
         files: *.7z
+
