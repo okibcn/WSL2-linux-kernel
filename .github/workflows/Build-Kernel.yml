@@ -73,7 +73,7 @@ jobs:
             || LAST_DATE="2000.01.01T00:00:00Z"
         if [[ $WSL_DATE > $LAST_DATE ]]; then
             echo "NEW KERNEL SOURCE!!!!"
-            echo "# KERNEL CHANGES" > body.txt
+            echo "# KERNEL UPDATES" > body.txt
             echo >> body.txt
             cat body.txt
         fi
@@ -98,30 +98,29 @@ jobs:
 
     - name: "⏬ Fetch latest WSL kernel source"
       if:  env.CANCEL != 'true'
-      run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel .
+      run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel kernel
 
 
     - name: "⚙️ Build WSL Kernel for Windows 64 bits"
       if:  env.CANCEL != 'true'
-      run: yes '' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl
+      run: |
+        cd kernel
+        yes '' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl
 
     - name: "📦 Create Package"
       if:  env.CANCEL != 'true'
       run: |
-        cd nano
+        cd kernel
         ############################
         ##                          ##
         ##      CREATE PACKAGE      ##
         ##                          ##
         ############################
-        KERNEL__VERSION=$(make kernelversion)
+        KERNEL_VERSION=$(make kernelversion)
         echo "KERNEL_VERSION=$KERNEL_VERSION" >>  $GITHUB_ENV
-        7z a -aoa --  \
-          "WSLkernel_${KERNEL_VERSION}.7z"  \
-          pkg_{i686,x86_64}-w64-mingw32/{bin/nano.exe,share/{nano,doc}/}  \
-          .nanorc LICENSE README.md || exit 1
-        mv *.7z ..
-        cd ..
+        cp ../install.ps1
+        cp arch/x86/boot/bzImage WSLk_${KERNEL_VERSION}
+        7z a -aoa -- "../WSLkernel_${KERNEL_VERSION}.7z" install.ps1 WSLk*
 
     - name: "👍 Upload Artifact"
       uses: actions/upload-artifact@v3
