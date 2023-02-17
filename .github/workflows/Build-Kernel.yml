@@ -1,8 +1,8 @@
 name: Build Kernel
 
 on:
-  # schedule:
-  #   - cron: '52 0 * * *'
+  schedule:
+    - cron: '52 */3 * * *'
   workflow_dispatch:
     inputs:
       debug_enabled:
@@ -41,7 +41,7 @@ jobs:
             echo "NEW KERNEL SOURCE!!!!"
             echo "# KERNEL UPDATES" > $body
             echo >> $body
-            cat $body
+            echo $(wget -q https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/releases/latest -O - | awk -F \" -v RS="," '/"body"/ {print $(NF-1)}') >> $body
         fi
         if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             echo "NEW IMPROVEMENT!!!!"
