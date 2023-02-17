@@ -43,7 +43,7 @@ jobs:
             echo "NEW KERNEL SOURCE!!!!"
             echo "# KERNEL UPDATES" > $body
             echo >> $body
-            text=$(gh api repos/microsoft/WSL2-Linux-Kernel/releases/latest | awk -F \" -v RS="," '/"body"/ {print $(NF-1)}')
+            text=$(wget -q -O- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/releases/latest | awk -F \" -v RS="," '/"body"/ {print $(NF-1)}')
             echo -e "$text" >> $body
         fi
         if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
