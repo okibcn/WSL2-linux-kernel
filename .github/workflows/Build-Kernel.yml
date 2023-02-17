@@ -125,9 +125,9 @@ jobs:
         cd kernel
         KERNEL_VERSION=$(make kernelversion)
         echo "KERNEL_VERSION=$KERNEL_VERSION" >> $GITHUB_ENV
-        cp ../install.ps1 .
+        cp ../*tall.ps1 .
         cp arch/x86/boot/bzImage WSL2kernel_${KERNEL_VERSION}
-        7z a -aoa -- "../WSL2kernel_${KERNEL_VERSION}.7z" install.ps1 WSL2k*
+        7z a -aoa -- "../WSL2kernel_${KERNEL_VERSION}.7z" *tall.ps1 WSL2k*
 
     - name: "👍 Upload Artifact"
       uses: actions/upload-artifact@v3

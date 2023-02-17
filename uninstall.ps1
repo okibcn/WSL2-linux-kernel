@@ -4,6 +4,6 @@ function uninstall_krnl {
     $newline = "kernel=$($kernel -replace '/|\\','\\')"
     $wslcfg = "~/.wslconfig"
     # Remove this kernel
-    (gc $wslcfg) | sls -notmatch "$newline" | Set-Content $wslcfg
+    (gc $wslcfg) | sls -notmatch "$newline"  -simplematch | Set-Content $wslcfg
 }
 uninstall_krnl
