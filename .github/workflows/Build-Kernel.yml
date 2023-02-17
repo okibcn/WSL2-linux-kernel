@@ -127,7 +127,7 @@ jobs:
         echo "KERNEL_VERSION=$KERNEL_VERSION" >> $GITHUB_ENV
         cp ../*tall.ps1 .
         cp arch/x86/boot/bzImage WSL2kernel_${KERNEL_VERSION}
-        7z a -aoa -- "../WSL2kernel_${KERNEL_VERSION}.7z" *tall.ps1 WSL2k*
+        7z a -aoa -tzip -- "../WSL2kernel_${KERNEL_VERSION}.zip" *tall.ps1 WSL2k*
 
     - name: "👍 Upload Artifact"
       uses: actions/upload-artifact@v3
@@ -135,7 +135,7 @@ jobs:
       with:
         name: ${{ env.KERNEL_VERSION }}
         path: |
-          *.7z
+          *.zip
 
 
     - name: "🎉 Publish a new release"
@@ -149,5 +149,5 @@ jobs:
         tag_name: ${{ env.KERNEL_VERSION }}
         body_path: /home/runner/body.txt
         files: |
-          *.7z
+          *.zip
 
