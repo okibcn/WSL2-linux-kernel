@@ -1,5 +1,6 @@
 
 function install_krnl {
+    wsl --shutdown
     cd $PSScriptRoot
     $kernel = (gci WSL2kernel_*).FullName
     $newline = "kernel=$($kernel -replace '/|\\','\\')"
