@@ -31,8 +31,7 @@ jobs:
       run: |
         body="/home/runner/body.txt"
         WSL_DATE="$(wget -q -O- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/commits | jq '.[1].commit.committer.date' -r )"
-        LAST_DATE="$( wget -q -O- https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest | jq .published_at -r )"
-            || LAST_DATE="2000.01.01T00:00:00Z"
+        LAST_DATE="$( wget -q -O- https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest | jq .published_at -r )" || LAST_DATE="2000.01.01T00:00:00Z"
         echo "The last WSL2 Kernel commit date is:  $WSL_DATE"
         echo "The last Release in this repo was on: $LAST_DATE"
         if [[ $WSL_DATE > $LAST_DATE ]]; then
