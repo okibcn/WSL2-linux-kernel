@@ -1,7 +1,7 @@
 
 function install_krnl {
     cd $PSScriptRoot
-    $kernel = (gci WSL2k*).FullName
+    $kernel = (gci WSL2kernel_*).FullName
     $newline = "kernel=$($kernel -replace '/|\\','\\')"
     $wslcfg = "~/.wslconfig"
     $WSL2line = $Krnlline = [int]0
@@ -12,17 +12,15 @@ function install_krnl {
         cp $wslcfg $PSScriptRoot
         echo " Configuration file $wslcfg has been modified. A backup of the old file
  can be found in folder $PSScriptRoot"
+        (gc $wslcfg) | set-content $wslcfg
     }
     if ($WSL2line -eq 0) {
         # There isn't a WSL2 section
-        "" >> $wslcfg
-        "[wsl2]" >> $wslcfg
-        "$newline" >> $wslcfg
+        Add-Content $wslcfg "[wsl2]'n$newline"
     }
     elseif ($WSL2line -gt $Krnlline) {
         # no kernel line in WSL2 section
-        "" >> $wslcfg
-        "$newline" >> $wslcfg
+        Add-Content $wslcfg "$newline"
     }
     else {
         # Replace current custom kernel
