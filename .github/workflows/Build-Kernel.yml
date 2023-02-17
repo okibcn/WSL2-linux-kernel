@@ -108,7 +108,7 @@ jobs:
         mv temp/*/{*,.[^\.]*} kernel
 
 
-    - name: "⚙️ Build WSL Kernel for Windows 64 bits"
+    - name: "⚙️ Build WSL2 Kernel for Windows 64 bits"
       if:  env.CANCEL != 'true'
       run: |
         cd kernel
