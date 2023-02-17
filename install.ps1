@@ -1,7 +1,7 @@
 
 function install_krnl {
     cd $PSScriptRoot
-    $kernel = (gci WSLk*).FullName
+    $kernel = (gci WSL2k*).FullName
     $newline = "kernel=$($kernel -replace '/|\\','\\')"
     $wslcfg = "~/.wslconfig"
     $WSL2line = $Krnlline = [int]0
