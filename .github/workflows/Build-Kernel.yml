@@ -34,14 +34,17 @@ jobs:
         | grep '"date"' \
         | head -1 \
         | awk -F '"' '{print $(NF-1)}')"
+        echo "The last WSL2 Kernel commit date is:  $WSL_DATE"
         LAST_DATE=$( wget -q https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest -O - \
         | awk -F \" -v RS="," '/published_at/ {print $(NF-1)}' ) \
             || LAST_DATE="2000.01.01T00:00:00Z"
+        echo "The last Release in this repo was on: $LAST_DATE"
         if [[ $WSL_DATE > $LAST_DATE ]]; then
             echo "NEW KERNEL SOURCE!!!!"
             echo "# KERNEL UPDATES" > $body
             echo >> $body
-            echo $(wget -q https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/releases/latest -O - | awk -F \" -v RS="," '/"body"/ {print $(NF-1)}') >> $body
+            $text=$(gh api repos/microsoft/WSL2-Linux-Kernel/releases/latest | awk -F \" -v RS="," '/"body"/ {print $(NF-1)}')
+            echo -e "$text" >> $body
         fi
         if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             echo "NEW IMPROVEMENT!!!!"
@@ -100,14 +103,22 @@ jobs:
 
     - name: "⏬ Fetch latest WSL kernel source"
       if:  env.CANCEL != 'true'
-      run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel kernel
+      run: |
+        ## Slowwwww....
+        # git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel kernel
+
+        ## FAST!!!
+        aria2c -s8 https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/zipball -ozipball.zip
+        7z x zipball.zip -otemp
+        mkdir -p kernel
+        mv temp/*/{*,.[^\.]*} kernel
 
 
     - name: "⚙️ Build WSL Kernel for Windows 64 bits"
       if:  env.CANCEL != 'true'
       run: |
         cd kernel
-        yes '' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl || exit 0
+        yes '' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl || true
 
     - name: "📦 Create Package"
       if:  env.CANCEL != 'true'
