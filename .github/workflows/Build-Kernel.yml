@@ -119,6 +119,8 @@ jobs:
     - name: "⚙️ Build WSL2 Kernel with NBD for Windows 64 bits"
       if:  env.CANCEL != 'true'
       run: |
+        ##   NOTE: dif file generated after `makeconfig nconfig` with instruction:
+        #    diff -u Microsoft/config-wsl .config | grep "^[+-][^+^-].*" > ../name.dif
         cd kernel
         make distclean
         cp Microsoft/config-wsl .config
@@ -149,7 +151,7 @@ jobs:
         echo "KERNEL_VERSION=$KERNEL_VERSION" >> $GITHUB_ENV
         cp ../*tall.ps1 .
         find . -name "WSL2k*" | while read file; do 
-          mv $file{,_${KERNEL_VERSION}} 
+          mv "$file" "${file}_${KERNEL_VERSION}"
         done
         7z a -aoa -tzip -- "../WSL2kernel_${KERNEL_VERSION}.zip" *tall.ps1 WSL2k*
 

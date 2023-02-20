@@ -1,4 +1,6 @@
 ## nbd differences
+# dif file generated with instruction:
+#    diff -u Microsoft/config-wsl .config | grep "^[+-][^+^-].*" > ../name.dif
 +CONFIG_CC_CAN_LINK=y
 +CONFIG_CC_CAN_LINK_STATIC=y
 +CONFIG_CC_HAS_ASM_GOTO_OUTPUT=y
