@@ -98,7 +98,7 @@ jobs:
 
     - name: "⏬ Install Toolchain OS Tools"
       if:  env.CANCEL != 'true'
-      run: sudo apt -y install build-essential flex bison dwarves libssl-dev libelf-dev
+      run: sudo apt -y install build-essential flex bison dwarves libssl-dev libelf-dev python3 bc jq aria2 p7zip-full
 
 
     - name: "⏬ Fetch latest WSL kernel source"
@@ -117,7 +117,7 @@ jobs:
         # Update json
         cd kernel
         mv /home/runner/kernels.json .
-        json=$( cat kernels.json | jq ".version |= \"$(make kernelversion)\"" )
+        json=$(jq ".version |= \"$(make kernelversion)\"" kernels.json)
         echo "$json" > kernels.json
 
 
@@ -130,7 +130,8 @@ jobs:
         cp arch/x86/boot/bzImage WSL2kernel_std
 
         # Update json
-        json=$( cat kernels.json | jq '.kernels.std |= "Standard Microsoft WSL2 kernel"' )
+        json=$(jq '.kernels |= . + [{ "ID": "std",
+                  "description": "Standard Microsoft WSL2 kernel" }]' kernels.json)
         echo $json > kernels.json
 
 
@@ -145,21 +146,21 @@ jobs:
         cp Microsoft/config-wsl .config
         sed -i "s/-standard-/-nbd-/" .config
         while read line; do 
-            if [ "${line:0:1}" == '+' ] ; then
-                echo "adding  : ${line:1}"
-                echo ${line:1} >> .config
-            fi
-            if [ ${line:0:1} == '-' ] ; then
-                echo "removing: ${line:1}"
-                sed -i "/${line:1}/d" .config
-            fi
+          case ${line:0:1} in
+            +)  echo "adding  : ${line:1}"
+                echo ${line:1} >> .config ;;
+            -)  echo "removing: ${line:1}"
+                sed -i "/${line:1}/d" .config ;;
+          esac
         done < $difFile
         yes '' | make -j$(($(nproc)*2+1)) || true
         cp arch/x86/boot/bzImage WSL2kernel_nbd
 
         # Update json
-        json=$( cat kernels.json | jq '.kernels.nbd |= "Network Block Device enabled WSL2 kernel"' )
+        json=$(jq '.kernels |= . + [{ "ID": "nbd",
+          "description": "Network Block Device enabled WSL2 kernel" }]' kernels.json)
         echo $json > kernels.json
+
 
     - name: "📦 Create Package"
       if:  env.CANCEL != 'true'
