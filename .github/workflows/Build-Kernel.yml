@@ -30,6 +30,7 @@ jobs:
     - name: "✔️ Pre-build checks"
       run: |
         body="/home/runner/body.txt"
+        jsonFile="/home/runner/kernels.json"
         WSL_DATE="$(wget -q -O- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/commits | jq '.[1].commit.committer.date' -r )"
         LAST_DATE="$( wget -q -O- https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest | jq .published_at -r )" || LAST_DATE="2000.01.01T00:00:00Z"
         echo "The last WSL2 Kernel commit date is:  $WSL_DATE"
@@ -45,9 +46,14 @@ jobs:
             [ -f $body ] && echo >> $body
             echo "# IMPROVEMENTS" >> $body
             echo >> $body
+
         fi
         if [ -f $body ]; then
             echo "CANCEL=false" >>  $GITHUB_ENV
+            echo "{}" | jq "\
+              .commitDate |= \"${WSL_DATE}\" |\
+              .buildDate |= \"$(TZ=UTC date +'%Y.%m.%dT%H:%M:%SZ')\"" > $jsonFile
+
         else
             echo "NOTHING NEW. CANCELLING ACTION..."
             echo "CANCEL=true" >>  $GITHUB_ENV
@@ -108,19 +114,32 @@ jobs:
         mv temp/*/{*,.[^\.]*} kernel
         rm -rf zipball.zip temp
 
+        # Update json
+        cd kernel
+        mv /home/runner/kernels.json .
+        json=$( cat kernels.json | jq ".version |= \"$(make kernelversion)\"" )
+        echo "$json" > kernels.json
+
 
     - name: "⚙️ Build WSL2 Kernel for Windows 64 bits"
       if:  env.CANCEL != 'true'
       run: |
         cd kernel
-        yes '' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl || true
+        cp Microsoft/config-wsl .config
+        yes '' | make -j$(($(nproc)*2+1)) || true
         cp arch/x86/boot/bzImage WSL2kernel_std
+
+        # Update json
+        json=$( cat kernels.json | jq '.kernels.std |= "Standard Microsoft WSL2 kernel"' )
+        echo $json > kernels.json
+
 
     - name: "⚙️ Build WSL2 Kernel with NBD for Windows 64 bits"
       if:  env.CANCEL != 'true'
       run: |
         ##   NOTE: dif file generated after `makeconfig nconfig` with instruction:
         #    diff -u Microsoft/config-wsl .config | grep "^[+-][^+^-].*" > ../name.dif
+        difFile=../nbd.dif
         cd kernel
         make distclean
         cp Microsoft/config-wsl .config
@@ -134,9 +153,13 @@ jobs:
                 echo "removing: ${line:1}"
                 sed -i "/${line:1}/d" .config
             fi
-        done < ../nbd.dif
+        done < $difFile
         yes '' | make -j$(($(nproc)*2+1)) || true
         cp arch/x86/boot/bzImage WSL2kernel_nbd
+
+        # Update json
+        json=$( cat kernels.json | jq '.kernels.nbd |= "Network Block Device enabled WSL2 kernel"' )
+        echo $json > kernels.json
 
     - name: "📦 Create Package"
       if:  env.CANCEL != 'true'
@@ -153,7 +176,7 @@ jobs:
         find . -name "WSL2k*" | while read file; do 
           mv "$file" "${file}_${KERNEL_VERSION}"
         done
-        7z a -aoa -tzip -- "../WSL2kernel_${KERNEL_VERSION}.zip" *tall.ps1 WSL2k*
+        7z a -aoa -tzip -- "../WSL2kernel_${KERNEL_VERSION}.zip" kernels.json *tall.ps1 WSL2k*
 
     - name: "👍 Upload Artifact"
       uses: actions/upload-artifact@v3
