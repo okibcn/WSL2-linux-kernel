@@ -99,13 +99,14 @@ jobs:
       if:  env.CANCEL != 'true'
       run: |
         ## Slowwwww....
-        # git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel kernel
+        # git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git kernel
 
         ## FAST!!!
         aria2c -x 8 -j 8 -s 8 https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/zipball -ozipball.zip
         7z x zipball.zip -otemp
         mkdir -p kernel
         mv temp/*/{*,.[^\.]*} kernel
+        rm -rf zipball.zip temp
 
 
     - name: "⚙️ Build WSL2 Kernel for Windows 64 bits"
@@ -113,6 +114,27 @@ jobs:
       run: |
         cd kernel
         yes '' | make -j$(($(nproc)*2+1)) KCONFIG_CONFIG=Microsoft/config-wsl || true
+        cp arch/x86/boot/bzImage WSL2kernel_std
+
+    - name: "⚙️ Build WSL2 Kernel with NBD for Windows 64 bits"
+      if:  env.CANCEL != 'true'
+      run: |
+        cd kernel
+        make distclean
+        cp Microsoft/config-wsl .config
+        sed -i "s/-standard-/-nbd-/" .config
+        while read line; do 
+            if [ "${line:0:1}" == '+' ] ; then
+                echo "adding  : ${line:1}"
+                echo ${line:1} >> .config
+            fi
+            if [ ${line:0:1} == '-' ] ; then
+                echo "removing: ${line:1}"
+                sed -i "/${line:1}/d" .config
+            fi
+        done < ../nbd.dif
+        yes '' | make -j$(($(nproc)*2+1)) || true
+        cp arch/x86/boot/bzImage WSL2kernel_nbd
 
     - name: "📦 Create Package"
       if:  env.CANCEL != 'true'
@@ -126,7 +148,9 @@ jobs:
         KERNEL_VERSION=$(make kernelversion)
         echo "KERNEL_VERSION=$KERNEL_VERSION" >> $GITHUB_ENV
         cp ../*tall.ps1 .
-        cp arch/x86/boot/bzImage WSL2kernel_${KERNEL_VERSION}
+        find . -name "WSL2k*" | while read file; do 
+          mv $file{,_${KERNEL_VERSION}} 
+        done
         7z a -aoa -tzip -- "../WSL2kernel_${KERNEL_VERSION}.zip" *tall.ps1 WSL2k*
 
     - name: "👍 Upload Artifact"
