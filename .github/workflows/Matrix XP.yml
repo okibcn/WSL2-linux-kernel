@@ -3,7 +3,7 @@ name: WF test
 on:
   workflow_dispatch:
 
-  ################################################################################
+  ## CONFIG ##############################################################################
 jobs:
   job-config:
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
         echo ${{ steps.prebuild-checks.outputs.cancel }}
 
 
-  ################################################################################
+  ## BUILD ##############################################################################
   job-build:
     needs: [ job-config ]
     if: ${{ needs.job-config.outputs.cancel }} != 'true'
@@ -70,16 +70,16 @@ jobs:
         echo ${{ matrix.config }}
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
-        echo "${{ matrix.config }}" >> "Kernel_${{ matrix.config }}"
+        echo "${{ matrix.config }}" >> WSL2kernel
 
     - name: "👍 Upload Artifact"
       uses: actions/upload-artifact@v3
       with:
-        name: Kernel_${{ matrix.config }}
+        name: ${{ matrix.config }}
         path: |
-          Kernel_*
+          WSL2kernel
 
-  ################################################################################
+  ## PUBLISH ##############################################################################
   job-publish:
     if: ${{ needs.job-config.outputs.cancel }} != 'true'
     needs:
@@ -102,14 +102,14 @@ jobs:
     - name: Artifact downloader
       uses: actions/download-artifact@v3
       with:
-        path: ~/kernels
+        path: ~/artifacts
 
     - name: "✔️ TEST matrix"
       run: |
         pwd
         ls -als $(pwd)
-        ls ~
+        ls -als ~
         ls -als /home/runner
-        ls -Rals ~/kernels
+        ls -Rals ~/artifacts
 
         
