@@ -56,25 +56,6 @@ jobs:
     #     ##           or https://github.com/mxschmitt/action-tmate
 
 
-    # - name: generate_matrix
-    #   run: |
-    #     configs=$(find . -name "*.dif" | xargs basename -s .dif)
-    #     echo "CONFIGS:"
-    #     echo $configs
-
-    #     json="{}"
-    #     echo $configs | tr ' ' '\n' | while read config; do 
-    #       json=$(echo $json | jq ".include |= .+ [{\"config\":\"${config}\"}]")
-    #     done
-    #     echo "MATRIX json:"
-    #     echo $json
-
-    #     setstring="matrix=$(echo $json | jq --compact-output .)"
-    #     echo "STRING SETTING:"
-    #     echo $setstring
-
-    #     echo $setstring >> $GITHUB_ENV
-
     - name: generate_matrix_pwsh
       shell: pwsh
       run: |
@@ -87,7 +68,7 @@ jobs:
         "MATRIX:"
         $m | ConvertTo-Json
 
-        $setstring="matrix=$($m | ConvertTo-Json -compress)"
+        $setstring="matrix=$(($m | ConvertTo-Json -compress) -replace '"','\"')"
         echo $setstring >> $env:GITHUB_ENV
         "SETSTRING:"
         $setstring
