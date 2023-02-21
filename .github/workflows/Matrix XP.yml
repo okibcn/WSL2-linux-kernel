@@ -104,12 +104,13 @@ jobs:
       with:
         path: ~/artifacts
 
+    - name: Delete Artifacts
+      uses: jimschubert/delete-artifacts-action@v1
+
     - name: "✔️ TEST matrix"
       run: |
         pwd
         ls -als $(pwd)
         ls -als ~
-        ls -als /home/runner
         ls -Rals ~/artifacts
-
         
