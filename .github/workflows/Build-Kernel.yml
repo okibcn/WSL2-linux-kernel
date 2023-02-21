@@ -105,14 +105,14 @@ jobs:
       if:  env.CANCEL != 'true'
       run: |
         ## Slowwwww....
-        # git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git kernel
+        git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git kernel
 
         ## FAST!!!
         aria2c -x 8 -j 8 -s 8 https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/zipball -ozipball.zip
-        7z x zipball.zip -otemp
-        mkdir -p kernel
-        mv temp/*/{*,.[^\.]*} kernel
-        rm -rf zipball.zip temp
+        # 7z x zipball.zip -otemp
+        # mkdir -p kernel
+        # mv temp/*/{*,.[^\.]*} kernel
+        # rm -rf zipball.zip temp
 
         # Update json
         cd kernel
