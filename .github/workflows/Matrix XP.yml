@@ -3,23 +3,19 @@ name: WF test
 on:
   workflow_dispatch:
 
-
-env:
-  CANCEL: true
-  matrix: 'empty'
-
 jobs:
-  check-configurations:
+  job-config:
     runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      cancel: ${{ steps.prebuild-checks.outputs.matrix }}
     defaults:
       run:
         shell: bash
     steps:
-    - name: "✔️ Pre-build checks"
+    - name: Prebuild-checks
       run: |
-        echo "Cancel state:"
-        echo ${{ env.CANCEL }}
-        echo "CANCEL=false" >>  $GITHUB_ENV
+        echo "cancel=false" >>  $GITHUB_OUTPUT
 
 
     - name: "⏬ Checkout repository"
@@ -56,7 +52,7 @@ jobs:
     #     ##           or https://github.com/mxschmitt/action-tmate
 
 
-    - name: generate_matrix_pwsh
+    - name: set-matrix
       shell: pwsh
       run: |
         $configs=(gci *.dif).baseName
@@ -69,7 +65,7 @@ jobs:
         $m | ConvertTo-Json
 
         $setstring="matrix=$(($m | ConvertTo-Json -compress) -replace '"','\"')"
-        echo $setstring >> $env:GITHUB_ENV
+        echo $setstring >> $env:GITHUB_OUTPUT
         "SETSTRING:"
         $setstring
 
@@ -77,14 +73,16 @@ jobs:
     - name: "✔️ TEST matrix"
       run: |
         echo "MATRIX:"
-        echo ${{ env.matrix }}
-        echo "Cancel state:"
-        echo ${{ env.CANCEL }}
+        echo ${{ steps.set-matrix.outputs.matrix }}
+        echo "CANCEL:"
+        echo ${{ steps.prebuild-checks.CANCEL }}
 
 
   Execution:
     runs-on: ubuntu-latest
-    needs: [ check-configurations ]
+    needs: [ job-config ]
+    # strategy:
+    #   matrix: ${{ fromJson(needs.job-config.outputs.matrix) }}
     defaults:
       run:
         shell: bash
@@ -92,7 +90,7 @@ jobs:
     - name: "✔️ TEST matrix"
       run: |
         echo "MATRIX:"
-        echo ${{ env.matrix }}
-        echo "Cancel state:"
-        echo ${{ env.CANCEL }}
+        echo ${{ needs.job-config.outputs.matrix }}
+        echo "CANCEL:"
+        echo ${{ needs.job-config.outputs.cancel }}
 
