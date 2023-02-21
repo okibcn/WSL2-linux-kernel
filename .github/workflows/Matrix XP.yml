@@ -52,6 +52,12 @@ jobs:
         echo "CANCEL:"
         echo ${{ steps.prebuild-checks.outputs.cancel }}
 
+    - uses: actions/cache@v2
+      id: restore-build
+      with:
+        path: ./*
+        key: ${{ github.sha }}
+
 
   ## BUILD ##############################################################################
   job-build:
@@ -67,6 +73,28 @@ jobs:
       run:
         shell: bash
     steps:
+
+    - name: "✔️ ls"
+      run: |
+        pwd
+        ls -als $(pwd)
+        ls -als ~
+        ls -Rals ~/artifacts
+
+    - uses: actions/cache@v2
+      id: restore-build
+      with:
+        path: ./*
+        key: ${{ github.sha }}
+
+
+    - name: "✔️ ls"
+      run: |
+        pwd
+        ls -als $(pwd)
+        ls -als ~
+        ls -Rals ~/artifacts
+
     - name: "✔️ TEST matrix"
       run: |
         echo "MATRIX:"
