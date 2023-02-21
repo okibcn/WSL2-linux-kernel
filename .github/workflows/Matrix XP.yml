@@ -67,7 +67,7 @@ jobs:
         "MATRIX:"
         $m | ConvertTo-Json
 
-        "matrix={\"include\":[{\"config\":\"nbd\"},{\"config\":\"std\"}]}" | add-content $env:GITHUB_OUTPUT
+        "matrix={`"include`":[{`"config`":`"nbd`"},{`"config`":`"std`"}]}" | add-content $env:GITHUB_OUTPUT
         "MATRIX STRING:"
         "matrix=$(($m | ConvertTo-Json -compress) -replace '"','\"')"
 
