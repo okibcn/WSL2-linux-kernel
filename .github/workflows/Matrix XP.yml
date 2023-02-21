@@ -60,7 +60,7 @@ jobs:
         echo $configs
 
         json="{}"
-        echo $configs | while read config; do 
+        echo $configs | tr ' ' '\n' | while read config; do 
           json=$(echo $json | jq ".include |= .+ [{\"config\":\"${config}\"}]")
         done
         echo "MATRIX json:"
