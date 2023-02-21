@@ -58,47 +58,13 @@ jobs:
       id: set-matrix
       shell: pwsh
       run: |
-        $configs=(gci *.dif).baseName
-        "CONFIGS:"
-        $configs
-
         $m=@{include = @()}
-        $configs | % { $m.include+=@{config = $_} } 
+        (gci *.dif).baseName | % { $m.include+=@{config = $_} } 
         "MATRIX:"
         $m | ConvertTo-Json
-
-        "matrix=$(($m | ConvertTo-Json -compress) -replace '"','`"')" | add-content $env:GITHUB_OUTPUT
         "MATRIX STRING:"
         "matrix=$(($m | ConvertTo-Json -compress) -replace '"','`"')"
-
-        $setstring="configs=$(($m.include.config | ConvertTo-Json -compress) -replace '"','\"')"
-        $setstring >> $env:GITHUB_OUTPUT
-        "CONFIGS STRING:"
-        $setstring
-
-
-    # - name: "DETECT CONFIGS"
-    #   id: set-matrix
-    #   run: |
-    #     # configs=$(ls *.dif | grep -Po '^[^\.]+')
-    #     # echo "CONFIGS:"
-    #     # echo $configs
-
-    #     # JSON="["
-    #     # ls *.dif | grep -Po '^[^\.]+' | while read config; do
-    #     #   JSON="${JSON}\"${config}\","
-    #     # done
-
-    #     setstring="matrix={\"include\":[{\"config\":\"nbd\"},{\"config\":\"std\"}]}"
-    #     echo $setstring >> $GITHUB_OUTPUT
-    #     echo "MATRIX STRING:"
-    #     echo $setstring
-
-    #     setstring="configs=[\"nbd\",\"std\"]"
-    #     echo $setstring >> $GITHUB_OUTPUT
-    #     echo "CONFIGS STRING:"
-    #     echo $setstring
-
+        "matrix=$(($m | ConvertTo-Json -compress) -replace '"','`"')" >> $env:GITHUB_OUTPUT
 
 
     - name: "✔️ TEST matrix"
@@ -125,10 +91,7 @@ jobs:
       run: |
         echo "MATRIX:"
         echo ${{ needs.job-config.outputs.matrix }}
-        echo "MATRIX:"
-        echo ${{ needs.job-config.outputs.configs }}
         echo "CONFIG:"
         echo ${{ matrix.config }}
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
-
