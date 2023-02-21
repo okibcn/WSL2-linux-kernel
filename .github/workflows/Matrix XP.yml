@@ -5,7 +5,7 @@ on:
 
 
 env:
-  cancel: false
+  CANCEL: true
 
 jobs:
   Check-configurations:
@@ -16,11 +16,10 @@ jobs:
     steps:
     - name: "✔️ Pre-build checks"
       run: |
-        echo "CANCEL=true" >>  $GITHUB_ENV
+        echo "CANCEL=false" >>  $GITHUB_ENV
 
 
     - name: "⏬ Checkout repository"
-      if:  env.CANCEL != 'true'
       uses: actions/checkout@v3
 
 
