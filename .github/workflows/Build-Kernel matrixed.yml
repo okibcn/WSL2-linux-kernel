@@ -1,0 +1,206 @@
+name: Build Kernel
+
+on:
+  schedule:
+    - cron: '52 */3 * * *'
+  workflow_dispatch:
+    inputs:
+      debug_enabled:
+        description: 'Debug session enabled'
+        required: false
+        default: false
+        type: boolean
+      release:
+        description: 'Delivery Channel'
+        required: false
+        default: 'Artifact'
+        type: choice
+        options:
+          - "Artifact"
+          - "Release"    
+env:
+  cancel: false
+
+jobs:
+  Check-configurations:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - name: "✔️ Pre-build checks"
+      run: |
+        body="/home/runner/body.txt"
+        jsonFile="/home/runner/kernels.json"
+        WSL_DATE="$(wget -q -O- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/commits | jq '.[1].commit.committer.date' -r )"
+        LAST_DATE="$( wget -q -O- https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest | jq .published_at -r )" || LAST_DATE="2000.01.01T00:00:00Z"
+        echo "The last WSL2 Kernel commit date is:  $WSL_DATE"
+        echo "The last Release in this repo was on: $LAST_DATE"
+        if [[ $WSL_DATE > $LAST_DATE ]]; then
+            echo "NEW KERNEL SOURCE!!!!"
+            echo "# KERNEL UPDATES" > $body
+            echo >> $body
+            wget -q -O- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/releases/latest | jq .body -r >> $body
+        fi
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "NEW IMPROVEMENT!!!!"
+            [ -f $body ] && echo >> $body
+            echo "# IMPROVEMENTS" >> $body
+            echo >> $body
+
+        fi
+        if [ -f $body ]; then
+            echo "CANCEL=false" >>  $GITHUB_ENV
+            echo "{}" | jq "\
+              .commitDate |= \"${WSL_DATE}\" |\
+              .buildDate |= \"$(TZ=UTC date +'%Y.%m.%dT%H:%M:%SZ')\"" > $jsonFile
+
+        else
+            echo "NOTHING NEW. CANCELLING ACTION..."
+            echo "CANCEL=true" >>  $GITHUB_ENV
+        fi
+
+
+    - name: "⏬ Checkout repository"
+      if:  env.CANCEL != 'true'
+      uses: actions/checkout@v3
+
+
+    - name: "🔧 Prepare debug session"
+      if: github.event.inputs.debug_enabled == 'true'
+      run: |
+        ## install zsh
+        sudo apt install zsh zsh-syntax-highlighting
+
+        ## oh-my-posh
+        sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+        sudo chmod +x /usr/local/bin/oh-my-posh
+
+        ## setting rc files
+        echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.bashrc
+        echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.zshrc
+
+        ## Default profiles
+        # cp .nanorc.linux ~/.nanorc
+        # cp /etc/bash.bashrc ~
+        # cat Github_Linux/profile.sh >> ~/bash.bashrc
+        # sudo cp ~/bash.bashrc /etc/bash.bashrc -f
+        # cp Github_Linux/profile.sh ~/.zshrc
+
+
+    - name: "🐞 Debug session"
+      uses: mxschmitt/action-tmate@v3
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      if: github.event.inputs.debug_enabled == 'true'
+        ## More info at https://til.simonwillison.net/github-actions/debug-tmate
+        ##           or https://github.com/mxschmitt/action-tmate
+
+
+    - name: "⏬ Install Toolchain OS Tools"
+      if:  env.CANCEL != 'true'
+      run: sudo apt -y install build-essential flex bison dwarves libssl-dev libelf-dev python3 bc jq aria2 p7zip-full
+
+
+    - name: "⏬ Fetch latest WSL kernel source"
+      if:  env.CANCEL != 'true'
+      run: |
+        ## Slowwwww....
+        # git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git kernel
+
+        ## FAST!!!
+        aria2c -x 8 -j 8 -s 8 https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/zipball -ozipball.zip
+        7z x zipball.zip -otemp
+        mkdir -p kernel
+        mv temp/*/{*,.[^\.]*} kernel
+        rm -rf zipball.zip temp
+
+        # Update json
+        cd kernel
+        mv /home/runner/kernels.json .
+        json=$(jq ".version |= \"$(make kernelversion)\"" kernels.json)
+        echo "$json" > kernels.json
+
+
+    - name: "⚙️ Build WSL2 Kernel for Windows 64 bits"
+      if:  env.CANCEL != 'true'
+      run: |
+        cd kernel
+        cp Microsoft/config-wsl .config
+        yes '' | make -j$(($(nproc)*2+1)) || true
+        cp arch/x86/boot/bzImage WSL2kernel_std
+
+        # Update json
+        json=$(jq '.kernels |= . + [{ "config": "std",
+                  "description": "Standard Microsoft WSL2 kernel" }]' kernels.json)
+        echo $json > kernels.json
+
+
+    - name: "⚙️ Build WSL2 Kernel with NBD for Windows 64 bits"
+      if:  env.CANCEL != 'true'
+      run: |
+        ##   NOTE: dif file generated after `makeconfig nconfig` with instruction:
+        #    diff -u Microsoft/config-wsl .config | grep "^[+-][^+^-].*" > ../name.dif
+        difFile=../nbd.dif
+        cd kernel
+        make distclean
+        cp Microsoft/config-wsl .config
+        sed -i "s/-standard-/-nbd-/" .config
+        while read line; do 
+          case ${line:0:1} in
+            +)  echo "adding  : ${line:1}"
+                echo ${line:1} >> .config ;;
+            -)  echo "removing: ${line:1}"
+                sed -i "/${line:1}/d" .config ;;
+          esac
+        done < $difFile
+        yes '' | make -j$(($(nproc)*2+1)) || true
+        cp arch/x86/boot/bzImage WSL2kernel_nbd
+
+        # Update json
+        json=$(jq '.kernels |= . + [{ "config": "nbd",
+          "description": "Network Block Device enabled WSL2 kernel" }]' kernels.json)
+        echo $json > kernels.json
+
+
+    - name: "📦 Create Package"
+      if:  env.CANCEL != 'true'
+      run: |
+        ############################
+        ##                          ##
+        ##      CREATE PACKAGE      ##
+        ##                          ##
+        ############################
+        cd kernel
+        APP_VERSION=$(cat ../wsl2kernel.ps1 |  grep -Po "^#.*v([\d\.\-]+)" |  grep -Po "([\d\.\-]+)")        
+        KERNEL_VERSION=$(make kernelversion)
+        echo "VERSION=${KERNEL_VERSION}-${APP_VERSION}" >> $GITHUB_ENV
+        cp ../*.ps1 .
+        find . -name "WSL2k*" | while read file; do 
+          mv "$file" "${file}_${KERNEL_VERSION}"
+        done
+        7z a -aoa -tzip -- "../WSL2kernel_${KERNEL_VERSION}.zip" kernels.json *.ps1 WSL2k*
+
+
+    - name: "👍 Upload Artifact"
+      uses: actions/upload-artifact@v3
+      if: env.CANCEL != 'true' && github.event.inputs.release == 'Artifact'
+      with:
+        name: ${{ env.VERSION }}
+        path: |
+          *.zip
+
+
+    - name: "🎉 Publish a new release"
+      uses: softprops/action-gh-release@v0.1.15
+      # WARNING: before useing this action go to https://github.com/OWNER/REPO/settings/actions
+      # and in **Workflow Permissions** section give actions **Read and Write permissions**.
+      if: env.CANCEL != 'true' && (github.event_name != 'workflow_dispatch' || github.event.inputs.release == 'Release')
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.VERSION }}
+        body_path: /home/runner/body.txt
+        files: |
+          *.zip
+
