@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: 
-        config: ${{FromJson(needs.job-config.outputs.configs)}}
+        config: ${{ needs.job-config.outputs.configs }}
       fail-fast: false
     defaults:
       run:
@@ -103,6 +103,8 @@ jobs:
       run: |
         echo "MATRIX:"
         echo ${{ needs.job-config.outputs.matrix }}
+        echo "MATRIX:"
+        echo ${{ needs.job-config.outputs.configs }}
         echo "CONFIG:"
         echo ${{ matrix.config }}
         echo "CANCEL:"
