@@ -6,7 +6,7 @@ on:
 
 env:
   CANCEL: true
-  matrix: []
+  matrix: 'empty'
 
 jobs:
   Check-configurations:
