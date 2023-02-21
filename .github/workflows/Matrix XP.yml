@@ -66,7 +66,7 @@ jobs:
         "MATRIX:"
         $m | ConvertTo-Json
 
-        $setstring="matrix=$(($m | ConvertTo-Json -compress) -replace '"','\"')"
+        $setstring="matrix=`"$(($m | ConvertTo-Json -compress) -replace '"','\"')`""
         echo $setstring >> $env:GITHUB_OUTPUT
         "SETSTRING:"
         $setstring
@@ -82,10 +82,10 @@ jobs:
 
   job-build:
     needs: [ job-config ]
-    name: ${{ format('Build {0} configuration', matrix.config) }}
+    name: "Build configuration ${{ matrix.config }}"
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{ fromJson(needs.job-config.outputs.matrix) }}
+      matrix: ${{ needs.job-config.outputs.matrix }}
     defaults:
       run:
         shell: bash
