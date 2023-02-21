@@ -72,7 +72,7 @@ jobs:
         "MATRIX STRING:"
         $setstring
 
-        $setstring="configs=`"$(($m.include.config | ConvertTo-Json -compress) -replace '"','\"')`""
+        $setstring="configs=$(($m.include.config | ConvertTo-Json -compress) -replace '"','\"')"
         echo $setstring >> $env:GITHUB_OUTPUT
         "CONFIGS STRING:"
         $setstring
@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: 
-        config: ${{ needs.job-config.outputs.configs }}
+        config: ${{ FromJson(needs.job-config.outputs.configs) }}
       fail-fast: false
     defaults:
       run:
