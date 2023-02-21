@@ -136,6 +136,31 @@ jobs:
       with:
         path: ~/artifacts
 
+    - uses: geekyeggo/delete-artifact@v2
+      with:
+          name: '*'
+
+    # - name: Cleanup
+    #   run: |
+    #     gh extension install actions/gh-actions-cache
+        
+    #     REPO=${{ github.repository }}
+    #     BRANCH="refs/pull/${{ github.event.pull_request.number }}/merge"
+
+    #     echo "Fetching list of cache key"
+    #     cacheKeysForPR=$(gh actions-cache list -R $REPO -B $BRANCH | cut -f 1 )
+
+    #     ## Setting this to not fail the workflow while deleting cache keys. 
+    #     set +e
+    #     echo "Deleting caches..."
+    #     for cacheKey in $cacheKeysForPR
+    #     do
+    #         gh actions-cache delete $cacheKey -R $REPO -B $BRANCH --confirm
+    #     done
+    #     echo "Done"
+    #   env:
+    #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
     - name: "✔️ list Caches"
       run: |
         curl \
@@ -143,10 +168,14 @@ jobs:
           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches
 
-    - uses: geekyeggo/delete-artifact@v2
-      with:
-          name: '*'
     - uses: snnaplab/delete-branch-cache-action@v1
+
+    - name: "✔️ list Caches"
+      run: |
+        curl \
+          -H "Accept: application/vnd.github.v3+json" \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches
 
     - name: "✔️ ls"
       run: |
