@@ -178,7 +178,7 @@ jobs:
         find . -name "WSL2k*" | while read file; do 
           mv "$file" "${file}_${KERNEL_VERSION}"
         done
-        7z a -aoa -tzip -- "../WSL2kernel_${KERNEL_VERSION}.zip" kernels.json *tall.ps1 WSL2k*
+        7z a -aoa -tzip -- "../WSL2kernel_${KERNEL_VERSION}.zip" kernels.json *.ps1 WSL2k*
 
 
     - name: "👍 Upload Artifact"
