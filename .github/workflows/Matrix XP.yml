@@ -80,11 +80,12 @@ jobs:
         echo ${{ steps.prebuild-checks.outputs.cancel }}
 
 
-  Execution:
-    runs-on: ubuntu-latest
+  job-build:
     needs: [ job-config ]
-    # strategy:
-    #   matrix: ${{ fromJson(needs.job-config.outputs.matrix) }}
+    name: ${{ format('Build {0} configuration', matrix.config) }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix: ${{ fromJson(needs.job-config.outputs.matrix) }}
     defaults:
       run:
         shell: bash
@@ -93,6 +94,8 @@ jobs:
       run: |
         echo "MATRIX:"
         echo ${{ needs.job-config.outputs.matrix }}
+        echo "CONFIG:"
+        echo ${{ matrix.config }}
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
 
