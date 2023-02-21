@@ -1,4 +1,4 @@
-name: Build Kernel 2.0
+name: Build Kernels
 
 on:
   # schedule:
@@ -30,39 +30,92 @@ jobs:
       run:
         shell: bash
     steps:
-    - name: "PRE-BUILD CHECKS" 
+    - name: "✔️ Pre-build checks"
       id: prebuild-checks
       run: |
-        echo "cancel=false" >>  $GITHUB_OUTPUT
+        body="$(pwd)/body.txt"
+        jsonFile="/home/runner/kernels.json"
+        WSL_DATE="$( wget -qO- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/commits | jq '.[1].commit.committer.date' -r )"
+        LAST_DATE="$( wget -qO- https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest | jq .published_at -r )" || LAST_DATE="2000.01.01T00:00:00Z"
+        echo "The last WSL2 Kernel commit date is:  $WSL_DATE"
+        echo "The last Release in this repo was on: $LAST_DATE"
+        if [[ $WSL_DATE > $LAST_DATE ]]; then
+            echo "NEW KERNEL SOURCE!!!!"
+            echo "# KERNEL UPDATES" > $body
+            echo >> $body
+            wget -qO- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/releases/latest | jq .body -r >> $body
+        fi
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "NEW IMPROVEMENT!!!!"
+            [ -f $body ] && echo >> $body
+            echo "# IMPROVEMENTS" >> $body
+            echo >> $body
+        fi
+        if [ -f $body ]; then
+            echo "{}" | jq "\
+              .commitDate |= \"${WSL_DATE}\" |\
+              .buildDate |= \"$(TZ=UTC date +'%Y.%m.%dT%H:%M:%SZ')\"" > $jsonFile
+            echo "cancel=false" >> $GITHUB_OUTPUT
+        else
+            echo "NOTHING NEW. CANCELLING ACTION..."
+            echo "cancel=true"  >> $GITHUB_OUTPUT
+        fi
 
-
-    - name: "⏬ Checkout repository"
+    - name: "⏬ Download repository"
       if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       uses: actions/checkout@v3
 
+    - name: "⏬ Download and Install Toolchain"
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      run: sudo apt -y install build-essential flex bison dwarves libssl-dev libelf-dev python3 bc jq aria2 p7zip-full
 
-    - name: "DETECT CONFIGS"
+    - name: "⏬ Fetch latest WSL kernel source"
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git kernel
+
+    - name: "🔍 Detect Configurations"
       id: set-matrix
       if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       shell: pwsh
       run: |
         $m=@{include = @()}
         (gci *.dif).baseName | % { $m.include+=@{config = $_} } 
-        "MATRIX:"
-        $m | ConvertTo-Json
-        "MATRIX STRING:"
-        "matrix=$(($m | ConvertTo-Json -compress) -replace '"','`"')"
         "matrix=$(($m | ConvertTo-Json -compress) -replace '"','`"')" >> $env:GITHUB_OUTPUT
 
+    - name: "📨 Send repo to jobs"
+      uses: actions/cache@v3.2.6
+      id: cache-sources
+      with:
+        path: ./*
+        key: ${{ github.sha }}-repo
 
-    - name: "✔️ TEST matrix"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+    - name: "📨 Send release body"
+      uses: actions/cache@v3.2.6
+      id: cache-sources
+      with:
+        path: ./body.txt
+        key: ${{ github.sha }}-body
+
+    - name: "🔧 Prepare debug session"
+      if: github.event.inputs.debug_enabled == 'true'
       run: |
-        echo "MATRIX:"
-        echo ${{ steps.set-matrix.outputs.matrix }}
-        echo "CANCEL:"
-        echo ${{ steps.prebuild-checks.outputs.cancel }}
+        sudo apt -y install zsh zsh-syntax-highlighting
+        sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+        sudo chmod +x /usr/local/bin/oh-my-posh
+        wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/.nanorc -O  ~/.nanorc
+        wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/profile.sh -O  ~/profile.sh
+        cp /etc/bash.bashrc ~
+        cat ~/profile.sh >> ~/bash.bashrc
+        sudo cp ~/bash.bashrc /etc/bash.bashrc -f
+        cp ~/profile.sh ~/.zshrc
 
+    - name: "🐞 Debug session"
+      uses: mxschmitt/action-tmate@v3
+      if: github.event.inputs.debug_enabled == 'true'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ## More info at https://til.simonwillison.net/github-actions/debug-tmate
+        ##           or https://github.com/mxschmitt/action-tmate
 
   ## BUILD ##############################################################################
   job-build:
