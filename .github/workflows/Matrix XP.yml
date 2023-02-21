@@ -84,8 +84,8 @@ jobs:
     needs: [ job-config ]
     name: "Build configuration ${{ matrix.config }}"
     runs-on: ubuntu-latest
-    # strategy:
-    #   matrix: ${{ needs.job-config.outputs.matrix }}
+    strategy:
+      matrix: ${{FromJson(needs.job-config.outputs.matrix)}}
     defaults:
       run:
         shell: bash
