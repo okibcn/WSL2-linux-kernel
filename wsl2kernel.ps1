@@ -1,3 +1,21 @@
+function helpme {
+ " WSL2kernel configuration tool v2.0 2023.02.20
+ (C) 2023 Oscar Lopez
+ For more information visit: https://github.com/okibcn/WSL2-linux-kernel
+
+ Usage: wsl2kernel [ l | h | u | i [config]]
+
+ wsl2 kernel installs the latest available kernel for WSL2, offering different
+ kernel build configurations depending on the special requests.
+ 
+ Options:
+ no opt. Shows this kelp.
+    l    Lists all the available configurations for the current version
+    i    Installs a configuration, or enters interactive mode if not provided
+    u    Uninstalls any custom kernel returning to the one provided with WSL
+    h    Shows this help.`n"
+}
+
 function uninstall {
     wsl --shutdown
     $line = "$($PSScriptRoot -replace '/|\\','\\')"
@@ -66,24 +84,6 @@ Function Menu {
     }
     install $json.kernels[$kernel].config
 }   
-
-function helpme {
- " WSL2kernel configuration tool v2.0 2023.02.20
- (C) 2023 Oscar Lopez
- For more information visit: https://github.com/okibcn/WSL2-linux-kernel
-
- Usage: wsl2kernel [ l | h | u | i [config]]
-
- wsl2 kernel installs the latest available kernel for WSL2, offering different
- kernel build configurations depending on the special requests.
- 
- Options:
- no opt. Shows this kelp.
-    l    Lists all the available configurations for the current version
-    i    Installs a configuration, or enters interactive mode if not provided
-    u    Uninstalls any custom kernel returning to the one provided with WSL
-    h    Shows this help.`n"
-}
 
 function wsl2kernel {
     cd $PSScriptRoot

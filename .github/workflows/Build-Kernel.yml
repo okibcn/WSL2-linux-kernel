@@ -171,19 +171,21 @@ jobs:
         ##                          ##
         ############################
         cd kernel
+        APP_VERSION=$(cat ../wsl2kernel.ps1 |  grep -Po "^#.*v([\d\.\-]+)" |  grep -Po "([\d\.\-]+)")        
         KERNEL_VERSION=$(make kernelversion)
-        echo "KERNEL_VERSION=$KERNEL_VERSION" >> $GITHUB_ENV
+        echo "VERSION=${KERNEL_VERSION}-APP_VERSION" >> $GITHUB_ENV
         cp ../*tall.ps1 .
         find . -name "WSL2k*" | while read file; do 
           mv "$file" "${file}_${KERNEL_VERSION}"
         done
         7z a -aoa -tzip -- "../WSL2kernel_${KERNEL_VERSION}.zip" kernels.json *tall.ps1 WSL2k*
 
+
     - name: "👍 Upload Artifact"
       uses: actions/upload-artifact@v3
       if: env.CANCEL != 'true' && github.event.inputs.release == 'Artifact'
       with:
-        name: ${{ env.KERNEL_VERSION }}
+        name: ${{ env.VERSION }}
         path: |
           *.zip
 
@@ -196,7 +198,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ env.KERNEL_VERSION }}
+        tag_name: ${{ env.VERSION }}
         body_path: /home/runner/body.txt
         files: |
           *.zip
