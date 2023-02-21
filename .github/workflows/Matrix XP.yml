@@ -6,6 +6,8 @@ on:
 
 env:
   CANCEL: true
+env:
+  matrix: []
 
 jobs:
   Check-configurations:
@@ -72,7 +74,7 @@ jobs:
     #     echo "STRING SETTING:"
     #     echo $setstring
 
-    #     echo $setstring >> $GITHUB_OUTPUT
+    #     echo $setstring >> $GITHUB_ENV
 
     - name: generate_matrix_pwsh
       shell: pwsh
@@ -95,7 +97,7 @@ jobs:
     - name: "✔️ TEST matrix"
       run: |
         echo "MATRIX:"
-        echo ${{ steps.generate_matrix_pwsh.outputs.matrix }}
+        echo ${{ env.matrix }}
         echo "Cancel state:"
         echo ${{ env.CANCEL }}
 
