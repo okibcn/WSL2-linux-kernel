@@ -92,13 +92,13 @@ jobs:
 
         setstring="matrix={\"include\":[{\"config\":\"nbd\"},{\"config\":\"std\"}]}"
         echo $setstring >> $GITHUB_OUTPUT
-        "MATRIX STRING:"
-        $setstring
+        echo "MATRIX STRING:"
+        echo $setstring
 
         setstring="configs=[\"nbd\",\"std\"]"
         echo $setstring >> $GITHUB_OUTPUT
-        "CONFIGS STRING:"
-        $setstring
+        echo "CONFIGS STRING:"
+        echo $setstring
 
 
 
