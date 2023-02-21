@@ -95,3 +95,18 @@ jobs:
         echo ${{ matrix.config }}
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
+
+  job-publish:
+    needs: [ job-build ]
+    name: "Publish"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - name: "✔️ TEST matrix"
+      run: |
+        echo "MATRIX:"
+        echo ${{ needs.job-config.outputs.matrix }}
+        echo "CANCEL:"
+        echo ${{ needs.job-config.outputs.cancel }}
