@@ -1,0 +1,83 @@
+name: WF test
+
+on:
+  workflow_dispatch:
+
+
+env:
+  cancel: false
+
+jobs:
+  Check-configurations:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - name: "✔️ Pre-build checks"
+      run: |
+        echo "CANCEL=true" >>  $GITHUB_ENV
+
+
+    - name: "⏬ Checkout repository"
+      if:  env.CANCEL != 'true'
+      uses: actions/checkout@v3
+
+
+    - name: generate_matrix
+      run: |
+        configs=$(find . -name "*dif" | xargs basename -a -s .dif)
+        echo "CONFIGS:"
+        echo $configs
+
+        json="{}"
+        echo $configs | while read config; do 
+          json=$(echo $json | jq ".include |= .+ [{\"config\":\"${config}\"}]")
+        done
+        echo "MATRIX json:"
+        echo $json
+
+        setstring="matrix=$(echo $json | jq --compact-output .)"
+        echo "STRING SETTING:"
+        echo $setstring
+
+        echo $setstring >> $GITHUB_OUTPUT
+
+
+    - name: "✔️ TEST matrix"
+      run: |
+        echo "MATRIX:"
+        echo ${{ steps.generate_matrix.outputs.matrix }}
+        echo "Cancel state:"
+        echo ${{ env.CANCEL }}
+        
+
+    # - name: "🔧 Prepare debug session"
+    #   run: |
+    #     ## install zsh
+    #     sudo apt install zsh zsh-syntax-highlighting
+
+    #     ## oh-my-posh
+    #     sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+    #     sudo chmod +x /usr/local/bin/oh-my-posh
+
+    #     ## setting rc files
+    #     echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.bashrc
+    #     echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.zshrc
+
+    #     ## Default profiles
+    #     # cp .nanorc.linux ~/.nanorc
+    #     # cp /etc/bash.bashrc ~
+    #     # cat Github_Linux/profile.sh >> ~/bash.bashrc
+    #     # sudo cp ~/bash.bashrc /etc/bash.bashrc -f
+    #     # cp Github_Linux/profile.sh ~/.zshrc
+
+
+    # - name: "🐞 Debug session"
+    #   uses: mxschmitt/action-tmate@v3
+    #   env:
+    #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #     ## More info at https://til.simonwillison.net/github-actions/debug-tmate
+    #     ##           or https://github.com/mxschmitt/action-tmate
+
+
