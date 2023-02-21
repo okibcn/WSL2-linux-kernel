@@ -24,36 +24,6 @@ jobs:
       uses: actions/checkout@v3
 
 
-    # - name: "🔧 Prepare debug session"
-    #   run: |
-    #     ## install zsh
-    #     sudo apt install zsh zsh-syntax-highlighting
-
-    #     ## oh-my-posh
-    #     sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
-    #     sudo chmod +x /usr/local/bin/oh-my-posh
-
-    #     ## setting rc files
-    #     echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.bashrc
-    #     echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.zshrc
-
-    #     ## Default profiles
-    #     wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/.nanorc -O  ~/.nanorc
-    #     wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/profile.sh -O  ~/profile.sh
-    #     cp /etc/bash.bashrc ~
-    #     cat ~/profile.sh >> ~/bash.bashrc
-    #     sudo cp ~/bash.bashrc /etc/bash.bashrc -f
-    #     cp ~/profile.sh ~/.zshrc
-
-
-    # - name: "🐞 Debug session"
-    #   uses: mxschmitt/action-tmate@v3
-    #   env:
-    #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    #     ## More info at https://til.simonwillison.net/github-actions/debug-tmate
-    #     ##           or https://github.com/mxschmitt/action-tmate
-
-
     - name: "DETECT CONFIGS"
       id: set-matrix
       shell: pwsh
@@ -97,7 +67,9 @@ jobs:
         echo ${{ needs.job-config.outputs.cancel }}
 
   job-publish:
-    needs: [ job-build ]
+    needs:
+    - job-build
+    - job-config
     name: "Publish"
     runs-on: ubuntu-latest
     defaults:
