@@ -55,30 +55,47 @@ jobs:
     #     ##           or https://github.com/mxschmitt/action-tmate
 
 
-    - name: generate_matrix
+    # - name: generate_matrix
+    #   run: |
+    #     configs=$(find . -name "*.dif" | xargs basename -s .dif)
+    #     echo "CONFIGS:"
+    #     echo $configs
+
+    #     json="{}"
+    #     echo $configs | tr ' ' '\n' | while read config; do 
+    #       json=$(echo $json | jq ".include |= .+ [{\"config\":\"${config}\"}]")
+    #     done
+    #     echo "MATRIX json:"
+    #     echo $json
+
+    #     setstring="matrix=$(echo $json | jq --compact-output .)"
+    #     echo "STRING SETTING:"
+    #     echo $setstring
+
+    #     echo $setstring >> $GITHUB_OUTPUT
+
+    - name: generate_matrix_pwsh
+      shell: pwsh
       run: |
-        configs=$(find . -name "*.dif" | xargs basename -s .dif)
-        echo "CONFIGS:"
-        echo $configs
+        $configs=(gci *.dif).baseName
+        "CONFIGS:"
+        $configs
 
-        json="{}"
-        echo $configs | tr ' ' '\n' | while read config; do 
-          json=$(echo $json | jq ".include |= .+ [{\"config\":\"${config}\"}]")
-        done
-        echo "MATRIX json:"
-        echo $json
+        $m=@{include = @()}
+        $configs | % { $m.include+=@{config = $_} } 
+        "MATRIX:"
+        $m | ConvertTo-Json
 
-        setstring="matrix=$(echo $json | jq --compact-output .)"
-        echo "STRING SETTING:"
-        echo $setstring
-
-        echo $setstring >> $GITHUB_OUTPUT
+        $setstring="matrix=$($m | ConvertTo-Json -compress)"
+        echo $setstring >> $env:GITHUB_OUTPUT
+        "SETSTRING:"
+        $setstring
 
 
     - name: "✔️ TEST matrix"
       run: |
         echo "MATRIX:"
-        echo ${{ steps.generate_matrix.outputs.matrix }}
+        echo ${{ steps.generate_matrix_pwsh.outputs.matrix }}
         echo "Cancel state:"
         echo ${{ env.CANCEL }}
 
