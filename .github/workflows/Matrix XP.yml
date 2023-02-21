@@ -9,7 +9,7 @@ env:
   matrix: 'empty'
 
 jobs:
-  Check-configurations:
+  check-configurations:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -81,4 +81,18 @@ jobs:
         echo "Cancel state:"
         echo ${{ env.CANCEL }}
 
+
+  Execution:
+    runs-on: ubuntu-latest
+    needs: [ check-configurations ]
+    defaults:
+      run:
+        shell: bash
+    steps:
+    - name: "✔️ TEST matrix"
+      run: |
+        echo "MATRIX:"
+        echo ${{ env.matrix }}
+        echo "Cancel state:"
+        echo ${{ env.CANCEL }}
 
