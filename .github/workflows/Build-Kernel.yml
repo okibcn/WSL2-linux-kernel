@@ -33,8 +33,8 @@ jobs:
     - name: "✔️ Pre-build checks"
       id: prebuild-checks
       run: |
-        body="$(pwd)/body.txt"
-        jsonFile="$(pwd)/kernels.json"
+        body="~/body.txt"
+        jsonFile="~/kernels.json"
         WSL_DATE="$( wget -qO- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/commits | jq '.[1].commit.committer.date' -r )"
         LAST_DATE="$( wget -qO- https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest | jq .published_at -r )" || LAST_DATE="2000.01.01T00:00:00Z"
         echo "The last WSL2 Kernel commit date is:  $WSL_DATE"
@@ -74,8 +74,8 @@ jobs:
       if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       shell: pwsh
       run: |
-        jq ".version |= \`"$(cd src;make kernelversion;cd ..)\`"" kernels.json | set-content kernels.json
-        7z a metadata.7z body.txt kernels.json
+        jq ".version |= \`"$(cd src;make kernelversion;cd ..)\`"" ~/kernels.json | set-content kernels.json
+        7z a metadata.7z ~/body.txt kernels.json
         $m=@{include = @()}
         (gci *.dif).baseName | % { $m.include+=@{config = $_} } 
         "matrix=$(($m | ConvertTo-Json -compress) -replace '"','`"')" >> $env:GITHUB_OUTPUT
