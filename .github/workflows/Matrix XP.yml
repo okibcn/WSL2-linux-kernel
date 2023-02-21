@@ -90,7 +90,6 @@ jobs:
     - name: "✔️ TEST matrix"
       run: |
         echo "MATRIX:"
-        echo ${{ needs.job-config.outputs.matrix }}
-        echo ${{ FromJson(needs.job-config.outputs.matrix)  }}
+        echo "{${{ needs.job-config.outputs.matrix }} }" | jq . || true
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
