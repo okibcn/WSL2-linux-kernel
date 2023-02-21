@@ -67,9 +67,9 @@ jobs:
         "MATRIX:"
         $m | ConvertTo-Json
 
-        "matrix=$(($m | ConvertTo-Json -compress) -replace '"','\"')"  >> $env:GITHUB_OUTPUT
+        "matrix=$(($m | ConvertTo-Json -compress) -replace '"','\"')" | add-content $env:GITHUB_OUTPUT
         "MATRIX STRING:"
-        $setstring
+        "matrix=$(($m | ConvertTo-Json -compress) -replace '"','\"')"
 
         $setstring="configs=$(($m.include.config | ConvertTo-Json -compress) -replace '"','\"')"
         $setstring >> $env:GITHUB_OUTPUT
