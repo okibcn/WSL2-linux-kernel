@@ -91,6 +91,6 @@ jobs:
       run: |
         echo "MATRIX:"
         echo ${{ needs.job-config.outputs.matrix }}
-        echo ${{ needs.job-config.outputs.matrix }} | jq .
+        echo ${{ FromJson(needs.job-config.outputs.matrix)  }}
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
