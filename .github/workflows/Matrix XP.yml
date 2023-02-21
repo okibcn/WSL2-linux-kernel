@@ -89,7 +89,7 @@ jobs:
         $m | ConvertTo-Json
 
         $setstring="matrix=$($m | ConvertTo-Json -compress)"
-        echo $setstring >> $env:GITHUB_OUTPUT
+        echo $setstring >> $env:GITHUB_ENV
         "SETSTRING:"
         $setstring
 
