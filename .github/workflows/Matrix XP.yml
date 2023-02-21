@@ -101,7 +101,8 @@ jobs:
 
     - name: Artifact downloader
       uses: actions/download-artifact@v3
-      path: /home/runner/kernels
+      with:
+        path: /home/runner/kernels
 
     - name: "✔️ TEST matrix"
       run: |
@@ -109,5 +110,5 @@ jobs:
         ls ~ || true
         ls -als /home/runner
         ls -Rals ~/kernels
-        
+
         
