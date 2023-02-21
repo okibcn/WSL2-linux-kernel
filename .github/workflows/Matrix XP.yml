@@ -136,10 +136,9 @@ jobs:
       with:
         path: ~/artifacts
 
-    - name: Delete Artifacts
-      uses: jimschubert/delete-artifacts-action@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - uses: geekyeggo/delete-artifact@v2
+      with:
+          name: '*'
 
     - name: "✔️ ls"
       run: |
