@@ -174,7 +174,7 @@ jobs:
         APP_VERSION=$(cat ../wsl2kernel.ps1 |  grep -Po "^#.*v([\d\.\-]+)" |  grep -Po "([\d\.\-]+)")        
         KERNEL_VERSION=$(make kernelversion)
         echo "VERSION=${KERNEL_VERSION}-${APP_VERSION}" >> $GITHUB_ENV
-        cp ../*tall.ps1 .
+        cp ../*.ps1 .
         find . -name "WSL2k*" | while read file; do 
           mv "$file" "${file}_${KERNEL_VERSION}"
         done
