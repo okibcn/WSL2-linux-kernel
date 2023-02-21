@@ -1,16 +1,6 @@
+Network Block Device enabled WSL2 kernel
 ## nbd differences
 # dif file generated with instruction:
 #    diff -u Microsoft/config-wsl .config | grep "^[+-][^+^-].*" > ../name.dif
-+CONFIG_CC_CAN_LINK=y
-+CONFIG_CC_CAN_LINK_STATIC=y
-+CONFIG_CC_HAS_ASM_GOTO_OUTPUT=y
-+CONFIG_CC_HAS_ASM_GOTO_TIED_OUTPUT=y
-+CONFIG_CC_HAS_SLS=y
-+# CONFIG_SLS is not set
--# CONFIG_GCC_PLUGINS is not set
 -# CONFIG_BLK_DEV_NBD is not set
 +CONFIG_BLK_DEV_NBD=y
-+CONFIG_CC_HAS_ZERO_CALL_USED_REGS=y
-+# CONFIG_ZERO_CALL_USED_REGS is not set
-+CONFIG_HAVE_KCSAN_COMPILER=y
-+# CONFIG_KCSAN is not set

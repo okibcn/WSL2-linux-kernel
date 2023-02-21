@@ -1,0 +1,5 @@
+Standard Microsoft WSL2 kernel
+## differences template
+# generate dif file with instruction:
+#    diff -u Microsoft/config-wsl .config | grep "^[+-][^+^-].*" > ../name.dif
+# then use the first line for the config description
