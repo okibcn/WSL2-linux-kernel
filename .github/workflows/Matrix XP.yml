@@ -106,7 +106,7 @@ jobs:
 
     - name: "✔️ TEST matrix"
       run: |
-        pwr
+        pwd
         ls ~ || true
         ls -als /home/runner
         ls -Rals ~/kernels
