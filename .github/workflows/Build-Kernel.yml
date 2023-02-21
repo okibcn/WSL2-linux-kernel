@@ -91,7 +91,7 @@ jobs:
 
     - name: "📨 Send release body"
       uses: actions/cache@v3.2.6
-      id: cache-sources
+      id: cache-body
       with:
         path: ./body.txt
         key: ${{ github.sha }}-body
