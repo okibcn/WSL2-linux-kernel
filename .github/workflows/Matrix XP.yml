@@ -8,7 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
-      configs: ${{ steps.set-matrix.outputs.configs }}
       cancel: ${{ steps.prebuild-checks.outputs.cancel }}
     defaults:
       run:
@@ -21,11 +20,13 @@ jobs:
 
 
     - name: "⏬ Checkout repository"
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       uses: actions/checkout@v3
 
 
     - name: "DETECT CONFIGS"
       id: set-matrix
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       shell: pwsh
       run: |
         $m=@{include = @()}
@@ -38,6 +39,7 @@ jobs:
 
 
     - name: "✔️ TEST matrix"
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       run: |
         echo "MATRIX:"
         echo ${{ steps.set-matrix.outputs.matrix }}
@@ -47,6 +49,7 @@ jobs:
 
   job-build:
     needs: [ job-config ]
+    if: ${{ needs.job-config.outputs.cancel }} != 'true'
     name: "Build configuration ${{ matrix.config }}"
     runs-on: ubuntu-latest
     strategy:
@@ -65,8 +68,16 @@ jobs:
         echo ${{ matrix.config }}
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
+        echo "${{ matrix.config }}" >> "Kernel_${{ matrix.config }}"
+    - name: "👍 Upload Artifact"
+      uses: actions/upload-artifact@v3
+      with:
+        name: Kernel_${{ matrix.config }}
+        path: |
+          Kernel_*
 
   job-publish:
+    if: ${{ needs.job-config.outputs.cancel }} != 'true'
     needs:
     - job-config
     - job-build
@@ -80,5 +91,6 @@ jobs:
       run: |
         echo "MATRIX:"
         echo ${{ needs.job-config.outputs.matrix }}
+        echo ${{ needs.job-config.outputs.matrix }} | jq .
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
