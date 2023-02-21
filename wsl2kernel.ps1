@@ -68,7 +68,7 @@ Function Menu {
 }   
 
 function helpme {
- " WSL2kernel configuration tool v1.0 2023.02.20
+ " WSL2kernel configuration tool v2.0 2023.02.20
  (C) 2023 Oscar Lopez
  For more information visit: https://github.com/okibcn/WSL2-linux-kernel
 
