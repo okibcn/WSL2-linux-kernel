@@ -90,6 +90,6 @@ jobs:
     - name: "✔️ TEST matrix"
       run: |
         echo "MATRIX:"
-        echo "{${{ needs.job-config.outputs.matrix }} }" | jq . || true
+        echo "${{ needs.job-config.outputs.matrix }}" | sed 's|"|\"|g' | jq . || true
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
