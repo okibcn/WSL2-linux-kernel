@@ -68,8 +68,8 @@ jobs:
 
   job-publish:
     needs:
-    - job-build
     - job-config
+    - job-build
     name: "Publish"
     runs-on: ubuntu-latest
     defaults:
