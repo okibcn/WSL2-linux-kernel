@@ -130,7 +130,7 @@ jobs:
         cp arch/x86/boot/bzImage WSL2kernel_std
 
         # Update json
-        json=$(jq '.kernels |= . + [{ "ID": "std",
+        json=$(jq '.kernels |= . + [{ "config": "std",
                   "description": "Standard Microsoft WSL2 kernel" }]' kernels.json)
         echo $json > kernels.json
 
@@ -157,7 +157,7 @@ jobs:
         cp arch/x86/boot/bzImage WSL2kernel_nbd
 
         # Update json
-        json=$(jq '.kernels |= . + [{ "ID": "nbd",
+        json=$(jq '.kernels |= . + [{ "config": "nbd",
           "description": "Network Block Device enabled WSL2 kernel" }]' kernels.json)
         echo $json > kernels.json
 
