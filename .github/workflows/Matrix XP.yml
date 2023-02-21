@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
+      configs: ${{ steps.set-matrix.outputs.configs }}
       cancel: ${{ steps.prebuild-checks.outputs.cancel }}
     defaults:
       run:
@@ -68,8 +69,14 @@ jobs:
 
         $setstring="matrix=`"$(($m | ConvertTo-Json -compress) -replace '"','\"')`""
         echo $setstring >> $env:GITHUB_OUTPUT
-        "SETSTRING:"
+        "MATRIX STRING:"
         $setstring
+
+        $setstring="configs=`"$(($m.include.config | ConvertTo-Json -compress) -replace '"','\"')`""
+        echo $setstring >> $env:GITHUB_OUTPUT
+        "CONFIGS STRING:"
+        $setstring
+        
 
 
     - name: "✔️ TEST matrix"
@@ -85,7 +92,8 @@ jobs:
     name: "Build configuration ${{ matrix.config }}"
     runs-on: ubuntu-latest
     strategy:
-      matrix: ${{FromJson(needs.job-config.outputs.matrix)}}
+      matrix: 
+        config: ${{FromJson(needs.job-config.outputs.configs)}}
       fail-fast: false
     defaults:
       run:
