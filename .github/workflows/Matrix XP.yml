@@ -115,8 +115,8 @@ jobs:
     name: "Build configuration ${{ matrix.config }}"
     runs-on: ubuntu-latest
     strategy:
-      matrix: 
-        config: ${{ FromJson(needs.job-config.outputs.configs) }}
+      matrix: ${{ FromJson(needs.job-config.outputs.matrix) }}
+        # config: ${{ FromJson(needs.job-config.outputs.configs) }}
       fail-fast: false
     defaults:
       run:
