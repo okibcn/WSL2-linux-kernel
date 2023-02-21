@@ -137,8 +137,8 @@ jobs:
         path: ./artifacts
 
     - uses: geekyeggo/delete-artifact@v2
-      # with:
-      #     name: '*'
+      with:
+          name: '*'
 
     - name: "✔️ list Caches"
       run: |

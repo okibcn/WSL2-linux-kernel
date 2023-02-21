@@ -159,13 +159,63 @@ jobs:
       run:
         shell: bash
     steps:
+    - name: "⏬ Download repository"
+      uses: actions/checkout@v3
+
     - name: "📬 Receive Images from Build Jobs"
       uses: actions/download-artifact@v3
       with:
         path: ./artifacts
 
-    - uses: geekyeggo/delete-artifact@v2
+    - name: "📬 Receive metadata"
+      uses: actions/cache@v3.2.6
+      id: cache-metadata
+      with:
+        key: ${{ github.sha }}-metadata
+        path: ./metadata.7z
+
+    - name: "🚮 Dispose Cache"
+      uses: snnaplab/delete-branch-cache-action@v1
+
+    - name: "🚮 Dispose Temporal Artifacts"
+      uses: geekyeggo/delete-artifact@v2
       with:
           name: '*'
 
-    - uses: snnaplab/delete-branch-cache-action@v1
+    - name: "📦 Create Package"
+      run: |
+        7z e metadata.7z
+        APP_VERSION=$(cat wsl2kernel.ps1 |  grep -Po "^#.*v([\d\.\-]+)" |  grep -Po "([\d\.\-]+)")
+
+    - name: "🔧 Prepare debug session"
+      if: github.event.inputs.debug_enabled == 'true'
+      run: |
+        ## install zsh
+        sudo apt install zsh zsh-syntax-highlighting
+
+        ## oh-my-posh
+        sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+        sudo chmod +x /usr/local/bin/oh-my-posh
+
+        ## setting rc files
+        echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.bashrc
+        echo "eval \"\$(oh-my-posh init \$(oh-my-posh get shell))\"" >> ~/.zshrc
+
+        ## Default profiles
+        wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/.nanorc -O  ~/.nanorc
+        wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/profile.sh -O  ~/profile.sh
+        cp /etc/bash.bashrc ~
+        cat ~/profile.sh >> ~/bash.bashrc
+        sudo cp ~/bash.bashrc /etc/bash.bashrc -f
+        cp ~/profile.sh ~/.zshrc
+
+
+    - name: "🐞 Debug session"
+      uses: mxschmitt/action-tmate@v3
+      if: github.event.inputs.debug_enabled == 'true'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ## More info at https://til.simonwillison.net/github-actions/debug-tmate
+        ##           or https://github.com/mxschmitt/action-tmate
+
+    
