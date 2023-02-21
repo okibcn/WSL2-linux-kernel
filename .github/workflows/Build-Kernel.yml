@@ -34,7 +34,7 @@ jobs:
       id: prebuild-checks
       run: |
         body="$(pwd)/body.txt"
-        jsonFile="/home/runner/kernels.json"
+        jsonFile="$(pwd)/kernels.json"
         WSL_DATE="$( wget -qO- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/commits | jq '.[1].commit.committer.date' -r )"
         LAST_DATE="$( wget -qO- https://api.github.com/repos/$GITHUB_REPOSITORY/releases/latest | jq .published_at -r )" || LAST_DATE="2000.01.01T00:00:00Z"
         echo "The last WSL2 Kernel commit date is:  $WSL_DATE"
@@ -65,57 +65,36 @@ jobs:
       if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       uses: actions/checkout@v3
 
-    - name: "⏬ Download and Install Toolchain"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
-      run: sudo apt -y install build-essential flex bison dwarves libssl-dev libelf-dev python3 bc jq aria2 p7zip-full
-
     - name: "⏬ Fetch latest WSL kernel source"
       if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
-      run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git kernel
+      run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git src
 
-    - name: "🔍 Detect Configurations"
+    - name: "🪄 Prepare Build jobs"
       id: set-matrix
       if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       shell: pwsh
       run: |
+        jq ".version |= \`"$(cd src;make kernelversion;cd ..)\`"" kernels.json | set-content kernels.json
+        7z a metadata.7z body.txt kernels.json
         $m=@{include = @()}
         (gci *.dif).baseName | % { $m.include+=@{config = $_} } 
         "matrix=$(($m | ConvertTo-Json -compress) -replace '"','`"')" >> $env:GITHUB_OUTPUT
 
-    - name: "📨 Send repo to jobs"
+    - name: "💾 Save metadata"
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      uses: actions/cache@v3.2.6
+      id: cache-metadata
+      with:
+        key: ${{ github.sha }}-metadata
+        path: ./metadata.7z
+
+    - name: "💾 Save Build Folder"
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       uses: actions/cache@v3.2.6
       id: cache-sources
       with:
         path: ./*
         key: ${{ github.sha }}-repo
-
-    - name: "📨 Send release body"
-      uses: actions/cache@v3.2.6
-      id: cache-body
-      with:
-        path: ./body.txt
-        key: ${{ github.sha }}-body
-
-    - name: "🔧 Prepare debug session"
-      if: github.event.inputs.debug_enabled == 'true'
-      run: |
-        sudo apt -y install zsh zsh-syntax-highlighting
-        sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
-        sudo chmod +x /usr/local/bin/oh-my-posh
-        wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/.nanorc -O  ~/.nanorc
-        wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/profile.sh -O  ~/profile.sh
-        cp /etc/bash.bashrc ~
-        cat ~/profile.sh >> ~/bash.bashrc
-        sudo cp ~/bash.bashrc /etc/bash.bashrc -f
-        cp ~/profile.sh ~/.zshrc
-
-    - name: "🐞 Debug session"
-      uses: mxschmitt/action-tmate@v3
-      if: github.event.inputs.debug_enabled == 'true'
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        ## More info at https://til.simonwillison.net/github-actions/debug-tmate
-        ##           or https://github.com/mxschmitt/action-tmate
 
   ## BUILD ##############################################################################
   job-build:
@@ -131,22 +110,42 @@ jobs:
       run:
         shell: bash
     steps:
-    - name: "✔️ TEST matrix"
-      run: |
-        echo "MATRIX:"
-        echo ${{ needs.job-config.outputs.matrix }}
-        echo "CONFIG:"
-        echo ${{ matrix.config }}
-        echo "CANCEL:"
-        echo ${{ needs.job-config.outputs.cancel }}
-        echo "${{ matrix.config }}" >> WSL2kernel
+    - name: "⏬ Download and Install Toolchain"
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      run: sudo apt -y install build-essential flex bison dwarves libssl-dev libelf-dev python3 bc jq aria2 p7zip-full
 
-    - name: "👍 Upload Artifact"
+    - name: "📂 Load Build Folder"
+      uses: actions/cache@v3.2.6
+      id: cache-sources
+      with:
+        path: ./*
+        key: ${{ github.sha }}-repo
+
+    - name: "⚙️ Build WSL2 Kernel with ${{ matrix.config }} configuration for Windows 64 bits"
+      run: |
+        ##   NOTE: dif file generated after `makeconfig nconfig` with instruction:
+        #    diff -u Microsoft/config-wsl .config | grep "^[+-][^+^-].*" > ../<CONFIG>.dif
+        difFile="$(pwd)/${{ matrix.config }}.dif"
+        cd src
+          sed "s/-standard-/-${{ matrix.config }}-/" Microsoft/config-wsl > .config
+          while read line; do 
+            case ${line:0:1} in
+              +)  echo "adding  : ${line:1}"
+                  echo ${line:1} >> .config ;;
+              -)  echo "removing: ${line:1}"
+                  sed -i "/${line:1}/d" .config ;;
+            esac
+          done < $difFile
+          yes '' | make -j$(($(nproc)*2+1)) || true
+          cp arch/x86/boot/bzImage ../WSL2kernel_${{ matrix.config }}
+
+    - name: "👍 Upload Image as Artifact"
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.config }}
         path: |
-          WSL2kernel
+          WSL2kernel_${{ matrix.config }}
+          src/.config
 
   ## PUBLISH ##############################################################################
   job-publish:
@@ -160,26 +159,13 @@ jobs:
       run:
         shell: bash
     steps:
-    - name: "✔️ TEST matrix"
-      run: |
-        echo "MATRIX:"
-        echo '${{ needs.job-config.outputs.matrix }}'
-        echo '${{ needs.job-config.outputs.matrix }}' | jq . || true
-        echo "CANCEL:"
-        echo ${{ needs.job-config.outputs.cancel }}
-
-    - name: Artifact downloader
+    - name: "📬 Receive Images from Build Jobs"
       uses: actions/download-artifact@v3
       with:
-        path: ~/artifacts
+        path: ./artifacts
 
-    - name: Delete Artifacts
-      uses: jimschubert/delete-artifacts-action@v1
+    - uses: geekyeggo/delete-artifact@v2
+      with:
+          name: '*'
 
-    - name: "✔️ TEST matrix"
-      run: |
-        pwd
-        ls -als $(pwd)
-        ls -als ~
-        ls -Rals ~/artifacts
-        
+    - uses: snnaplab/delete-branch-cache-action@v1
