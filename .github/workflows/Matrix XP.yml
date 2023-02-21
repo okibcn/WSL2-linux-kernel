@@ -67,8 +67,7 @@ jobs:
         "MATRIX:"
         $m | ConvertTo-Json
 
-        $setstring="matrix=$(($m | ConvertTo-Json -compress) -replace '"','\"')"
-        $setstring >> $env:GITHUB_OUTPUT
+        "matrix=$(($m | ConvertTo-Json -compress) -replace '"','\"')"  >> $env:GITHUB_OUTPUT
         "MATRIX STRING:"
         $setstring
 
