@@ -183,10 +183,10 @@ jobs:
       with:
           name: '*'
 
-    - name: "📦 Create Package"
-      run: |
-        7z e metadata.7z
-        APP_VERSION=$(cat wsl2kernel.ps1 |  grep -Po "^#.*v([\d\.\-]+)" |  grep -Po "([\d\.\-]+)")
+    # - name: "📦 Create Package"
+    #   run: |
+    #     7z e metadata.7z
+    #     APP_VERSION=$(cat wsl2kernel.ps1 |  grep -Po "^#.*v([\d\.\-]+)" |  grep -Po "([\d\.\-]+)")
 
     - name: "🔧 Prepare debug session"
       if: github.event.inputs.debug_enabled == 'true'
