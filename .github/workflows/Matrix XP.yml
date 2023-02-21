@@ -86,6 +86,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix: ${{FromJson(needs.job-config.outputs.matrix)}}
+      fail-fast: false
     defaults:
       run:
         shell: bash
