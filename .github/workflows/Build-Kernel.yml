@@ -136,9 +136,9 @@ jobs:
                   sed -i "/${line:1}/d" .config ;;
             esac
           done < $difFile
-          # yes '' | make -j$(($(nproc)*2+1)) || true
-          # cp arch/x86/boot/bzImage ../WSL2kernel_${{ matrix.config }}
-          echo "${{ matrix.config }}" > ../WSL2kernel_${{ matrix.config }}
+          yes '' | make -j$(($(nproc)*2+1)) || true
+          cp arch/x86/boot/bzImage ../WSL2kernel_${{ matrix.config }}
+          # echo "${{ matrix.config }}" > ../WSL2kernel_${{ matrix.config }}
 
     - name: "👍 Upload Image as Artifact"
       uses: actions/upload-artifact@v3
