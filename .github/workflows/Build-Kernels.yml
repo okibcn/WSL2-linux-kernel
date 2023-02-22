@@ -45,12 +45,12 @@ jobs:
             echo >> $body
             wget -qO- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/releases/latest | jq .body -r >> $body
         fi
-        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-            echo "NEW IMPROVEMENT!!!!"
-            [ -f $body ] && echo >> $body
-            echo "# IMPROVEMENTS" >> $body
-            echo >> $body
-        fi
+        # if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+        #     echo "NEW IMPROVEMENT!!!!"
+        #     [ -f $body ] && echo >> $body
+        #     echo "# IMPROVEMENTS" >> $body
+        #     echo >> $body
+        # fi
         if [ -f $body ]; then
             echo "{}" | jq "\
               .commitDate |= \"${WSL_DATE}\" |\
@@ -62,18 +62,18 @@ jobs:
         fi
 
     - name: "⏬ Download repository"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      if: steps.prebuild-checks.outputs.cancel != 'true'
       uses: actions/checkout@v3
 
     - name: "⏬ Fetch latest WSL kernel source"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      if: steps.prebuild-checks.outputs.cancel != 'true'
       run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git src
       # latest rolling release:  git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
       # Microsoft config file:  https://github.com/microsoft/WSL2-Linux-Kernel/raw/linux-msft-wsl-5.15.y/Microsoft/config-wsl
 
     - name: "🪄 Prepare Build jobs"
       id: set-matrix
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      if: steps.prebuild-checks.outputs.cancel != 'true'
       shell: pwsh
       run: |
         jq ".version |= \`"$(cd src;make kernelversion;cd ..)\`"" ~/kernels.json | set-content kernels.json
@@ -83,7 +83,7 @@ jobs:
         "matrix=$(($m | ConvertTo-Json -compress) -replace '"','`"')" >> $env:GITHUB_OUTPUT
 
     - name: "💾 Save metadata"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      if: steps.prebuild-checks.outputs.cancel != 'true'
       uses: actions/cache@v3.2.6
       id: cache-metadata
       with:
@@ -91,7 +91,7 @@ jobs:
         path: ./metadata.7z
 
     - name: "💾 Save Build Folder"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      if: steps.prebuild-checks.outputs.cancel != 'true'
       uses: actions/cache@v3.2.6
       id: cache-sources
       with:
@@ -101,7 +101,7 @@ jobs:
   ## BUILD ##############################################################################
   job-build:
     needs: [ job-config ]
-    if: ${{ needs.job-config.outputs.cancel }} != 'true'
+    if: needs.job-config.outputs.cancel != 'true'
     name: "Build configuration ${{ matrix.config }}"
     runs-on: ubuntu-latest
     strategy:
@@ -113,7 +113,6 @@ jobs:
         shell: bash
     steps:
     - name: "⏬ Download and Install Toolchain"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       run: sudo apt -y install build-essential flex bison dwarves libssl-dev libelf-dev python3 bc jq aria2 p7zip-full
 
     - name: "📂 Load Build Folder"
@@ -152,7 +151,7 @@ jobs:
 
   ## PUBLISH ##############################################################################
   job-publish:
-    if: ${{ needs.job-config.outputs.cancel }} != 'true'
+    if: needs.job-config.outputs.cancel != 'true'
     needs:
     - job-config
     - job-build
