@@ -190,10 +190,6 @@ jobs:
         KERNEL_VERSION=$(jq .version -r kernels.json)
         BUILD_VERSION="${KERNEL_VERSION}-${APP_VERSION}"
         echo "BUILD_VERSION=${BUILD_VERSION}" >> $GITHUB_ENV
-        find artifacts/ -name "WSL*" | while read f; do
-          mv "$f" "${f}_${KERNEL_VERSION}"
-        done
-        mv artifacts/*/WSL* .
         ls -1 *.dif | sed "s|\..*||g" | while read c; do
           cp "artifacts/${c}/WSL2kernel_${c}" "WSL2kernel_${c}_${KERNEL_VERSION}"
           description=$(head -1 "${c}.dif" | sed "s|\r||")
@@ -209,7 +205,6 @@ jobs:
           kernels.json
         7z l "WSL2kernel_${BUILD_VERSION}.zip"
 
-
     - name: "👍 Upload Artifact"
       uses: actions/upload-artifact@v3
       if: env.CANCEL != 'true' && github.event.inputs.release == 'Artifact'
@@ -219,7 +214,6 @@ jobs:
           *zip
           body.txt
           artifacts/*/src/.config
-
 
     - name: "🎉 Publish a new release"
       uses: softprops/action-gh-release@v0.1.15
