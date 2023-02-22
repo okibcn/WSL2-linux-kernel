@@ -17,7 +17,7 @@ jobs:
     - name: "PRE-BUILD CHECKS" 
       id: prebuild-checks
       run: |
-        echo "cancel=false" >>  $GITHUB_OUTPUT
+        echo "cancel=true" >>  $GITHUB_OUTPUT
 
     - name: "✔️ ls"
       run: |
@@ -26,7 +26,7 @@ jobs:
         ls -als ~
 
     - name: "⏬ Checkout repository"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      if: ${{ FromJson(steps.prebuild-checks.outputs.cancel) }} != 'true'
       uses: actions/checkout@v3
 
 

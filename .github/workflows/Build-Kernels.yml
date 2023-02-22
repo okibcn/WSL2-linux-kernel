@@ -45,12 +45,12 @@ jobs:
             echo >> $body
             wget -qO- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/releases/latest | jq .body -r >> $body
         fi
-        # if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-        #     echo "NEW IMPROVEMENT!!!!"
-        #     [ -f $body ] && echo >> $body
-        #     echo "# IMPROVEMENTS" >> $body
-        #     echo >> $body
-        # fi
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "NEW IMPROVEMENT!!!!"
+            [ -f $body ] && echo >> $body
+            echo "# IMPROVEMENTS" >> $body
+            echo >> $body
+        fi
         if [ -f $body ]; then
             echo "{}" | jq "\
               .commitDate |= \"${WSL_DATE}\" |\
@@ -62,11 +62,11 @@ jobs:
         fi
 
     - name: "⏬ Download repository"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != true
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       uses: actions/checkout@v3
 
     - name: "⏬ Fetch latest WSL kernel source"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != true
+      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git src
       # latest rolling release:  git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
       # Microsoft config file:  https://github.com/microsoft/WSL2-Linux-Kernel/raw/linux-msft-wsl-5.15.y/Microsoft/config-wsl
