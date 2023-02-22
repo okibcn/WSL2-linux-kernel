@@ -26,7 +26,7 @@ jobs:
         ls -als ~
 
     - name: "⏬ Checkout repository"
-      if: ${{ FromJson(steps.prebuild-checks.outputs.cancel) }} != 'true'
+      if: steps.prebuild-checks.outputs.cancel != 'true'
       uses: actions/checkout@v3
 
 
