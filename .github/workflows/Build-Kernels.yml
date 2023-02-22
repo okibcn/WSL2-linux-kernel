@@ -68,7 +68,7 @@ jobs:
     - name: "⏬ Fetch latest WSL kernel source"
       if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git src
-      # latest rolling release:  https://github.com/Nevuly/WSL2-Linux-Kernel-Rolling
+      # latest rolling release:  git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 
     - name: "🪄 Prepare Build jobs"
       id: set-matrix
