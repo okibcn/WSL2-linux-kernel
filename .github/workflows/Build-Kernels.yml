@@ -45,12 +45,12 @@ jobs:
             echo >> $body
             wget -qO- https://api.github.com/repos/microsoft/WSL2-Linux-Kernel/releases/latest | jq .body -r >> $body
         fi
-        # if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
-        #     echo "NEW IMPROVEMENT!!!!"
-        #     [ -f $body ] && echo >> $body
-        #     echo "# IMPROVEMENTS" >> $body
-        #     echo >> $body
-        # fi
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo "NEW IMPROVEMENT!!!!"
+            [ -f $body ] && echo >> $body
+            echo "# IMPROVEMENTS" >> $body
+            echo >> $body
+        fi
         if [ -f $body ]; then
             echo "{}" | jq "\
               .commitDate |= \"${WSL_DATE}\" |\

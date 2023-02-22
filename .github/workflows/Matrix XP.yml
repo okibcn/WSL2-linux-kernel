@@ -32,7 +32,7 @@ jobs:
 
     - name: "DETECT CONFIGS"
       id: set-matrix
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      if: steps.prebuild-checks.outputs.cancel != 'true'
       shell: pwsh
       run: |
         $m=@{include = @()}
@@ -45,7 +45,7 @@ jobs:
 
 
     - name: "✔️ TEST matrix"
-      if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
+      if: steps.prebuild-checks.outputs.cancel != 'true'
       run: |
         echo "MATRIX:"
         echo ${{ steps.set-matrix.outputs.matrix }}
@@ -63,7 +63,7 @@ jobs:
   ## BUILD ##############################################################################
   job-build:
     needs: [ job-config ]
-    if: ${{ needs.job-config.outputs.cancel }} != 'true'
+    if: needs.job-config.outputs.cancel != 'true'
     name: "Build configuration ${{ matrix.config }}"
     runs-on: ubuntu-latest
     strategy:
@@ -113,7 +113,7 @@ jobs:
 
   ## PUBLISH ##############################################################################
   job-publish:
-    if: ${{ needs.job-config.outputs.cancel }} != 'true'
+    if: needs.job-config.outputs.cancel != 'true'
     needs:
     - job-config
     - job-build
@@ -129,7 +129,7 @@ jobs:
         echo '${{ needs.job-config.outputs.matrix }}'
         echo '${{ needs.job-config.outputs.matrix }}' | jq . || true
         echo "CANCEL:"
-        echo ${{ needs.job-config.outputs.cancel }}
+        echo needs.job-config.outputs.cancel
 
     - name: Artifact downloader
       uses: actions/download-artifact@v3
