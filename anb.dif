@@ -1,0 +1,10 @@
+ashmem and binder enabled for Anbox compatibility
+## differences template
+# generate dif file with instruction:
+#    diff -u Microsoft/config-wsl .config | grep "^[+-][^+^-].*" > ../name.dif
+# then use the first line for the config description
++CONFIG_STAGING=y
++CONFIG_ASHMEM=y
++CONFIG_ANDROID=y
++CONFIG_ANDROID_BINDER_IPC=y
++CONFIG_ANDROID_BINDER_DEVICES="binder,hwbinder,vndbinder"

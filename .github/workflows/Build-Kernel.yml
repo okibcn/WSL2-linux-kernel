@@ -1,8 +1,8 @@
 name: Build Kernels
 
 on:
-  # schedule:
-  #   - cron: '52 */3 * * *'
+  schedule:
+    - cron: '52 */3 * * *'
   workflow_dispatch:
     inputs:
       debug_enabled:
@@ -68,6 +68,7 @@ jobs:
     - name: "⏬ Fetch latest WSL kernel source"
       if: ${{ steps.prebuild-checks.outputs.cancel }} != 'true'
       run: git clone --depth=1 https://github.com/microsoft/WSL2-Linux-Kernel.git src
+      # latest rolling release:  https://github.com/Nevuly/WSL2-Linux-Kernel-Rolling
 
     - name: "🪄 Prepare Build jobs"
       id: set-matrix
