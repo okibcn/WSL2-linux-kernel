@@ -224,7 +224,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: ${{ env.VERSION }}
+        tag_name: ${{ env.BUILD_VERSION }}
         body_path: body.txt
         files: |
           WSL2kernel_*
