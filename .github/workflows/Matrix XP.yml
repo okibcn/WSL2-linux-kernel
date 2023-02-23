@@ -90,8 +90,8 @@ jobs:
       uses: actions/cache@v3.2.6
       id: cache-sources
       with:
-        path: ./*
         key: ${{ github.sha }}-repo
+        path: ./*
 
     - name: "✔️ ls"
       run: |
@@ -118,7 +118,7 @@ jobs:
 
     - name: Set Cache
       uses: actions/cache@v3.2.6
-      id: cache-sources
+      id: cache-image
       with:
         key: ${{ github.sha }}-${{ matrix.config }}
         path: ./WSL2kernel-${{ matrix.config }}
