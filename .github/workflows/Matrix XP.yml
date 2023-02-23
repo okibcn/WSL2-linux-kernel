@@ -2,7 +2,12 @@ name: WF Test
 
 on:
   workflow_dispatch:
-
+    inputs:
+      debug_enabled:
+        description: 'Debug session enabled'
+        required: false
+        default: false
+        type: boolean
   ## CONFIG ##############################################################################
 jobs:
   job-config:
@@ -102,14 +107,22 @@ jobs:
         echo ${{ matrix.config }}
         echo "CANCEL:"
         echo ${{ needs.job-config.outputs.cancel }}
-        echo "${{ matrix.config }}" >> WSL2kernel
+        echo "${{ matrix.config }}" >> WSL2kernel-${{ matrix.config }}
 
     - name: "👍 Upload Artifact"
       uses: actions/upload-artifact@v3
       with:
         name: ${{ matrix.config }}
         path: |
-          WSL2kernel
+          WSL2kernel-${{ matrix.config }}
+
+    - name: Set Cache
+      uses: actions/cache@v3.2.6
+      id: cache-sources
+      with:
+        key: ${{ github.sha }}-${{ matrix.config }}
+        path: ./WSL2kernel-${{ matrix.config }}
+
 
   ## PUBLISH ##############################################################################
   job-publish:
@@ -146,6 +159,30 @@ jobs:
           -H "Accept: application/vnd.github.v3+json" \
           -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches
+
+
+
+
+    - name: "🔧 Prepare debug session"
+      if: github.event.inputs.debug_enabled == 'true'
+      run: |
+        sudo apt install zsh zsh-syntax-highlighting
+        sudo wget https://github.com/JanDeDobbeleer/oh-my-posh/releases/latest/download/posh-linux-amd64 -O /usr/local/bin/oh-my-posh
+        sudo chmod +x /usr/local/bin/oh-my-posh
+        wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/.nanorc -O ~/.nanorc
+        wget -q https://github.com/okibcn/miniU/raw/main/Github_Linux/profile.sh -O ~/.zshrc
+        cp /etc/bash.bashrc ~
+        cat ~/.zshrc >> ~/bash.bashrc
+        sudo cp ~/bash.bashrc /etc/bash.bashrc -f
+
+    - name: "🐞 Debug session"
+      uses: mxschmitt/action-tmate@v3
+      if: github.event.inputs.debug_enabled == 'true'
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        ## More info at https://til.simonwillison.net/github-actions/debug-tmate
+        ##           or https://github.com/mxschmitt/action-tmate
+
 
     - uses: snnaplab/delete-branch-cache-action@v1
 
