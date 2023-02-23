@@ -22,7 +22,7 @@ jobs:
     - name: "PRE-BUILD CHECKS" 
       id: prebuild-checks
       run: |
-        echo "cancel=true" >>  $GITHUB_OUTPUT
+        echo "cancel=false" >>  $GITHUB_OUTPUT
 
     - name: "✔️ ls"
       run: |
