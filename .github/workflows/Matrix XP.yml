@@ -58,7 +58,7 @@ jobs:
         echo ${{ steps.prebuild-checks.outputs.cancel }}
 
     - name: Set Cache
-      uses: actions/cache@v3.2.6
+      uses: actions/cache@v3.3.0
       id: cache-sources
       with:
         path: ./*
@@ -87,7 +87,7 @@ jobs:
         ls -als ~
 
     - name: Hit Cache
-      uses: actions/cache@v3.2.6
+      uses: actions/cache@v3.3.0
       id: cache-sources
       with:
         key: ${{ github.sha }}-repo
@@ -117,7 +117,7 @@ jobs:
           WSL2kernel-${{ matrix.config }}
 
     - name: Set Cache
-      uses: actions/cache@v3.2.6
+      uses: actions/cache@v3.3.0
       id: cache-image
       with:
         key: ${{ github.sha }}-${{ matrix.config }}

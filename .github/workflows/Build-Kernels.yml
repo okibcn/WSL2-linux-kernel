@@ -84,7 +84,7 @@ jobs:
 
     - name: "💾 Save metadata"
       if: steps.prebuild-checks.outputs.cancel != 'true'
-      uses: actions/cache@v3.2.6
+      uses: actions/cache@v3.3.0
       id: cache-metadata
       with:
         key: ${{ github.sha }}-metadata
@@ -92,7 +92,7 @@ jobs:
 
     - name: "💾 Save Build Folder"
       if: steps.prebuild-checks.outputs.cancel != 'true'
-      uses: actions/cache@v3.2.6
+      uses: actions/cache@v3.3.0
       id: cache-sources
       with:
         path: ./*
@@ -116,7 +116,7 @@ jobs:
       run: sudo apt -y install build-essential flex bison dwarves libssl-dev libelf-dev python3 bc jq aria2 p7zip-full
 
     - name: "📂 Load Build Folder"
-      uses: actions/cache@v3.2.6
+      uses: actions/cache@v3.3.0
       id: cache-sources
       with:
         path: ./*
@@ -170,7 +170,7 @@ jobs:
         path: ./artifacts
 
     - name: "📬 Receive metadata"
-      uses: actions/cache@v3.2.6
+      uses: actions/cache@v3.3.0
       id: cache-metadata
       with:
         key: ${{ github.sha }}-metadata
