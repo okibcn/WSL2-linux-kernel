@@ -63,7 +63,7 @@ jobs:
 
     - name: "⏬ Download repository"
       if: steps.prebuild-checks.outputs.cancel != 'true'
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: "⏬ Fetch latest WSL kernel source"
       if: steps.prebuild-checks.outputs.cancel != 'true'
@@ -162,7 +162,7 @@ jobs:
         shell: bash
     steps:
     - name: "⏬ Download repository"
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: "📬 Receive Images from Build Jobs"
       uses: actions/download-artifact@v3
